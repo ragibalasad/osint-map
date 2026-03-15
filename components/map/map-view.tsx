@@ -18,6 +18,7 @@ interface MapEvent {
   severity: "low" | "medium" | "high" | "critical";
   lng: number;
   lat: number;
+  createdAt: string;
 }
 
 export function MapView() {
@@ -47,6 +48,26 @@ export function MapView() {
   };
 
   const mapStyle = theme === "dark" ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
+
+  // Grouping logic for feed
+  const groupedEvents = React.useMemo(() => {
+    if (!events) return {};
+    const groups: Record<string, MapEvent[]> = {};
+    events.forEach((item: MapEvent) => {
+      const date = new Date(item.createdAt).toLocaleDateString("en-US", {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(item);
+    });
+    return groups;
+  }, [events]);
+
+  const formatTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden rounded-3xl border border-border/50 shadow-2xl">
@@ -126,7 +147,7 @@ export function MapView() {
             {isLoading && <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center gap-2 text-[10px] sm:text-xs font-medium text-muted-foreground bg-primary/5 p-2 rounded-xl border border-primary/10">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -136,23 +157,41 @@ export function MapView() {
             </div>
 
             {events && events.length > 0 ? (
-              <div className="max-h-60 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                {events.slice(0, 5).map((e: MapEvent) => (
-                  <div 
-                    key={e.id} 
-                    className="p-2 rounded-lg bg-secondary/30 border border-border/30 hover:bg-secondary/50 cursor-pointer transition-colors"
-                    onClick={() => {
-                        mapRef.current?.flyTo({ center: [e.lng, e.lat], zoom: 12 });
-                        setSelectedEvent(e);
-                    }}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                        <div className={cn(
-                            "w-1.5 h-1.5 rounded-full",
-                            e.severity === "critical" ? "bg-red-500" : "bg-primary"
-                        )} />
-                        <span className="text-[10px] font-bold truncate uppercase">{e.title}</span>
+              <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                {Object.entries(groupedEvents).map(([date, dayEvents]) => (
+                  <div key={date} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-px flex-1 bg-border/50" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">{date}</span>
+                      <div className="h-px flex-1 bg-border/50" />
                     </div>
+                    {dayEvents.map((e: MapEvent) => (
+                      <div 
+                        key={e.id} 
+                        className="p-3 rounded-xl bg-secondary/30 border border-border/30 hover:bg-secondary/50 cursor-pointer transition-all hover:scale-[1.02] active:scale-95 shadow-sm"
+                        onClick={() => {
+                            mapRef.current?.flyTo({ center: [e.lng, e.lat], zoom: 12 });
+                            setSelectedEvent(e);
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                                <div className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    e.severity === "critical" ? "bg-red-500 animate-pulse" : 
+                                    e.severity === "high" ? "bg-orange-500" : "bg-primary"
+                                )} />
+                                <span className="text-[10px] font-bold truncate uppercase tracking-tight">{e.title}</span>
+                            </div>
+                            <span className="text-[9px] font-medium text-muted-foreground tabular-nums">
+                              {formatTime(e.createdAt)}
+                            </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground line-clamp-1 leading-relaxed">
+                          {e.description}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>

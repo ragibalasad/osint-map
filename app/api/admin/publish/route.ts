@@ -1,0 +1,33 @@
+import { db } from "@/lib/db";
+import { pendingEvents, publishedEvents } from "@/lib/schema";
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
+import { pointSql } from "@/lib/map-logic";
+
+export async function POST(req: Request) {
+  try {
+    const { id, title, description, lng, lat, severity } = await req.json();
+
+    // 1. Get the pending event
+    const [pending] = await db.select().from(pendingEvents).where(eq(pendingEvents.id, id));
+    if (!pending) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // 2. Insert into published_events
+    await db.insert(publishedEvents).values({
+      title: title || pending.suggestedTitle || "Untitled Event",
+      description: description || pending.suggestedDescription || "",
+      severity: severity || "medium",
+      coordinates: pointSql(lng, lat),
+    });
+
+    // 3. Delete from pending_events (or mark as published)
+    await db.delete(pendingEvents).where(eq(pendingEvents.id, id));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Failed to publish event:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

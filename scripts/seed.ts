@@ -1,8 +1,8 @@
 import "dotenv/config";
-import { db } from "./lib/db";
-import { publishedEvents } from "./lib/schema";
-import { user } from "./lib/auth-schema";
-import { pointSql } from "./lib/map-logic";
+import { db } from "../lib/db";
+import { publishedEvents } from "../lib/schema";
+import { user } from "../lib/auth-schema";
+import { pointSql } from "../lib/map-logic";
 
 async function seed() {
   console.log("🌱 Seeding OSINT events...");

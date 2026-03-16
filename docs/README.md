@@ -1,22 +1,37 @@
-# OSINT Map Documentation
+# 📚 Documentation Hub
 
-Welcome to the OSINT Map project. This directory contains detailed technical documentation for developers and operators.
+Welcome to the **OSINT Map** technical documentation center. This repository serves as the single source of truth for the project's architecture, data modeling, and operational procedures.
 
-## 📖 Table of Contents
-1. **[Architecture Overview](architecture.md)**
-   - Understanding PostGIS, GIS layers, and sovereign tile hosting.
-2. **[AI & Pipeline Logic](pipeline.md)**
-   - How raw data from Telegram/RSS is parsed by Gemini and moderated.
-3. **[Database Schema](database.md)**
-   - Deep dive into the Postgres/PostGIS table structures.
+---
 
-## 🚀 Quick Links
-- **Main Map**: `/`
-- **Moderation Queue** (Admin Only): `/admin/queue`
-- **Auth Systems**: `/auth/sign-in`
+## 🗺️ Navigation
 
-## 🛠️ Tech Stack Snippet
-- **Frontend**: Next.js 15+, Tailwind CSS, MapLibre GL
-- **Backend**: Drizzle ORM, Neon (PostgreSQL + PostGIS)
-- **AI**: Google Generative AI (Gemini 1.5 Flash)
-- **Auth**: Better-Auth
+| Document | Focus Area | Audience |
+| :--- | :--- | :--- |
+| **[Architecture](architecture.md)** | System design, GIS layers, and sovereign hosting. | Architects / Lead devs |
+| **[Database Schema](database.md)** | PostGIS modeling, ER diagrams, and spatial logic. | Backend / DBAs |
+| **[Intelligence Pipeline](pipeline.md)** | AI extraction flow (Gemini), raw ingestion, and moderation. | DevOps / Operators |
+
+---
+
+## 🛠️ Tech Stack & Governance
+
+This project is built on a "Sovereign First" philosophy, prioritizing open-source engines and local control over proprietary SaaS dependencies.
+
+- **Frontend**: Next.js 15 (App Router) + Tailwind CSS 4.0
+- **Map Engine**: MapLibre GL JS (Vector Tile Native)
+- **Persistence**: PostgreSQL + PostGIS (Spatial Indexing)
+- **Logic**: Drizzle ORM + Better-Auth
+- **Intelligence**: Google Gemini 1.5 Flash (LLM Geolocation)
+
+---
+
+## 🆘 Operational Support
+
+### Useful Commands
+- **Enable PostGIS**: `pnpm db:postgis`
+- **Initialize DB**: `pnpm db:setup`
+- **Start Ingestor**: `pnpm tsx ingest/telegram-ingestor.ts`
+
+> [!NOTE]
+> For core setup instructions, please refer to the [Main Root README](../README.md).

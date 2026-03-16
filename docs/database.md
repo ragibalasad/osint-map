@@ -2,6 +2,30 @@
 
 This project leverages PostgreSQL with the **PostGIS** extension for advanced geospatial capabilities.
 
+```mermaid
+erDiagram
+    USER ||--o{ PUBLISHED_EVENTS : "approves"
+    PENDING_EVENTS ||--o{ SYSTEM_LOGS : "generates"
+    PUBLISHED_EVENTS {
+        uuid id PK
+        string title
+        geometry coordinates "PostGIS Point"
+        string severity
+        datetime createdAt
+    }
+    PENDING_EVENTS {
+        uuid id PK
+        string raw_source
+        json ai_suggestion
+        string status "pending|processed"
+    }
+    USER {
+        uuid id PK
+        string email
+        string role "admin|user"
+    }
+```
+
 ## 🗄️ Core Tables
 
 ### `published_events`

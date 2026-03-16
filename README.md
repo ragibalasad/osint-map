@@ -1,41 +1,39 @@
 # 🌐 OSINT Map
 
-A high-performance, real-time geopolitical mapping tool built with **Next.js**, **PostGIS**, and **Better-Auth**. Designed for speed, security, and clear geospatial intelligence.
-
-## 🚀 Features
-
-- **📍 Real-time Mapping**: Powered by MapLibre GL JS for smooth, high-volume data visualization.
-- **🔐 Secure Auth**: Built-in authentication with social providers (GitHub, Google) via Better-Auth.
-- **🌍 Geospatial Intelligence**: Native PostGIS integration for efficient viewport-based spatial queries.
-- **🌓 Adaptive UI**: Premium dark/light themes with a custom, integrated theme switcher.
-- **⚡ Modern Stack**: Next.js 15, Drizzle ORM, and Tailwind CSS 4.0.
-
-## 🛠️ Technology Stack
-
-- **Core**: [Next.js](https://nextjs.org/) (App Router)
-- **Database**: [PostgreSQL](https://www.postgresql.org/) + [PostGIS](https://postgis.net/)
-- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
-- **Auth**: [Better-Auth](https://better-auth.com/)
-- **Map**: [MapLibre GL JS](https://maplibre.org/) + [React-Map-GL](https://visgl.github.io/react-map-gl/)
-- **UI**: [Shadcn UI](https://ui.shadcn.com/) + [Tailwind CSS 4.0](https://tailwindcss.com/)
-
-## 🛤️ Roadmap
-
-- [x] Initial infrastructure and Auth setup
-- [x] PostGIS schema and spatial logic
-- [x] Map interface integration
-- [x] Automated data ingestion pipeline (Telegram/RSS/Social)
-- [x] Internal moderation dashboard
-- [x] Live viewport-based event fetching
-
-## 🛠️ Getting Started
-
-1. **Clone the repository**
-2. **Install dependencies:** `pnpm install`
-3. **Setup Environment:** Copy `.env.example` to `.env` and fill in your database and auth credentials.
-4. **Push Database Schema:** `pnpm drizzle-kit push`
-5. **Run Development Server:** `pnpm dev`
+A high-performance, precision geopolitical intelligence platform. Built with **Next.js 16**, **PostGIS**, and **Gemini AI**.
 
 ---
 
-Built for clarity and speed in geospatial intelligence.
+### 🚀 Quick Start
+
+1. **Clone & Install**: `pnpm install`
+2. **Setup Environment**: Copy `.env.example` to `.env`.
+3. **Tactical Initialization**:
+   ```bash
+   pnpm db:setup
+   ```
+   _This single command enables PostGIS, deploys the schema, and seeds starting data._
+4. **Finally**: `pnpm dev`
+
+---
+
+### 📖 Documentation
+
+For detailed technical specs and operational guides, see the [Documentation Hub](docs/README.md).
+
+- **[Architecture Overview](docs/architecture.md)**: GIS layers, viewport-first ingestion, and sovereign hosting.
+- **[Intelligence Pipeline](docs/pipeline.md)**: How raw Telegram signals are parsed by AI and moderated.
+- **[Database & GIS](docs/database.md)**: Deep dive into the PostGIS schema and R-Tree indexing.
+
+---
+
+### 🛡️ Operational Features
+
+- **📍 Precision Mapping**: High-speed geospatial visualization via MapLibre GL.
+- **🤖 AI Extraction**: Automated situational reports and geolocation using Gemini 1.5 Flash.
+- **👮 Moderation Queue**: Full-cycle verification from raw intel to published events.
+- **🔐 Secure Uplink**: Hardened role-based access control via Better-Auth.
+
+---
+
+Built for clarity, speed, and strategic awareness.

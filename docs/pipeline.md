@@ -2,6 +2,20 @@
 
 How raw intelligence becomes geolocated markers on the map.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Raw Ingest
+    Pending --> AI_Processing: Trigger Logic
+    AI_Processing --> ModerationQueue: Extraction Success
+    AI_Processing --> FailedLogs: Error/No Location
+    ModerationQueue --> Published: Admin Approval
+    ModerationQueue --> Rejected: Admin Dismissal
+    Published --> [*]
+```
+
+> [!IMPORTANT]
+> The coordinates suggested by the AI are **guesses** based on semantic analysis. They must always be verified by an admin in the Moderation Queue before being committed to the public GIS layer.
+
 ## 📡 1. Raw Ingestion
 The system is designed to swallow raw, unstructured text from various sources:
 - **Telegram Channels** (MTProto Scrapers)

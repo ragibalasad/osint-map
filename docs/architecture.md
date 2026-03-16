@@ -2,6 +2,27 @@
 
 This document explains the core technical architecture of the OSINT Map project.
 
+```mermaid
+sequenceDiagram
+    participant S as Intel Source (Telegram/RSS)
+    participant Q as Pending Queue (Postgres)
+    participant AI as Gemini 1.5 Flash
+    participant M as Admin Moderation
+    participant DB as Published Events (PostGIS)
+    participant U as User MapView
+
+    S->>Q: Raw Intelligence Feed
+    Q->>AI: Trigger AI Parsing
+    AI-->>Q: Return Geolocation + Summary
+    M->>Q: Expert Review/Correction
+    M->>DB: Publish to Main Layer
+    U->>DB: Viewport-based Fetch (BBox)
+    DB-->>U: Screen-optimized Markers
+```
+
+> [!TIP]
+> This architecture is designed for **sovereign hosting**. No external geospatial APIs (like Mapbox or Google Maps) are used for data storage or retrieval, ensuring maximum data privacy and cost control.
+
 ## 🏗️ 1. Geospatial Intelligence (GIS) Layer
 Unlike typical map applications that handle coordinates as simple numbers, this system uses a professional-grade **GIS (Geospatial Information System)** approach.
 

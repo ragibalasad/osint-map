@@ -33,3 +33,11 @@ export const pendingEvents = pgTable("pending_events", {
   status: text("status").$type<"pending" | "processed" | "rejected">().default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const systemLogs = pgTable("system_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  level: text("level").$type<"info" | "warn" | "error">().default("info").notNull(),
+  module: text("module").notNull(), // e.g. "INGEST", "AI", "AUTH"
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

@@ -15,66 +15,42 @@ import {
   Search,
 } from "lucide-react";
 
-const MOCK_LOGS = [
-  {
-    id: "LOG-8821",
-    level: "INFO",
-    module: "INGEST",
-    message: "Successfully polled Telegram channel @liveuamap",
-    time: "Just now",
-    icon: "emerald",
-  },
-  {
-    id: "LOG-8820",
-    level: "INFO",
-    module: "AI",
-    message: "Gemini 1.5 Flash: Successfully parsed instruction 0xfa21",
-    time: "2m ago",
-    icon: "blue",
-  },
-  {
-    id: "LOG-8819",
-    level: "WARN",
-    module: "INGEST",
-    message: "Rate limit threshold reached for worker node delta-4",
-    time: "5m ago",
-    icon: "amber",
-  },
-  {
-    id: "LOG-8818",
-    level: "INFO",
-    module: "AUTH",
-    message: "User admin@osint.map granted Level 2 clearance",
-    time: "12m ago",
-    icon: "emerald",
-  },
-  {
-    id: "LOG-8817",
-    level: "ERROR",
-    module: "DB",
-    message: "PostGIS geometry casting failed for trace #9982",
-    time: "18m ago",
-    icon: "red",
-  },
-  {
-    id: "LOG-8816",
-    level: "INFO",
-    module: "SYSTEM",
-    message: "Vercel deployment build ddca54d completed",
-    time: "25m ago",
-    icon: "blue",
-  },
-  {
-    id: "LOG-8815",
-    level: "INFO",
-    module: "INGEST",
-    message: "Channel @DeepStateUA priming completed (2 msgs)",
-    time: "44m ago",
-    icon: "emerald",
-  },
-];
+import useSWR from "swr";
+import { formatDistanceToNow } from "date-fns";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+interface SystemLog {
+  id: string;
+  level: "info" | "warn" | "error";
+  module: string;
+  message: string;
+  createdAt: string;
+}
 
 export default function SystemLogsPage() {
+  const { data, isLoading } = useSWR<SystemLog[]>("/api/admin/logs", fetcher, {
+    refreshInterval: 5000
+  });
+
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case "error": return "red";
+      case "warn": return "amber";
+      case "info": return "emerald";
+      default: return "blue";
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 space-y-8 flex flex-col items-center justify-center min-h-[60vh] opacity-50">
+        <Network className="w-10 h-10 animate-pulse text-primary" />
+        <p className="text-xs font-bold uppercase tracking-widest">Synchronizing Telemetry...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
@@ -115,7 +91,7 @@ export default function SystemLogsPage() {
           },
           {
             label: "Active Nodes",
-            value: "12/12",
+            value: "6/6",
             icon: Network,
             color: "purple",
           },
@@ -162,7 +138,7 @@ export default function SystemLogsPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-x-auto">
+        <div className="flex-1 overflow-x-auto min-h-[400px]">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border/20 text-[10px] font-bold text-muted-foreground uppercase bg-secondary/10">
@@ -176,7 +152,7 @@ export default function SystemLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/10">
-              {MOCK_LOGS.map((log) => (
+              {Array.isArray(data) && data.map((log) => (
                 <tr
                   key={log.id}
                   className="hover:bg-primary/5 transition-colors group font-sans"
@@ -186,13 +162,13 @@ export default function SystemLogsPage() {
                       <div
                         className={cn(
                           "w-1.5 h-1.5 rounded-full shrink-0",
-                          `bg-${log.icon}-500 shadow-[0_0_8px_rgba(var(--${log.icon}-500),0.4)]`
+                          `bg-${getLevelColor(log.level)}-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]`
                         )}
                       />
                       <span
                         className={cn(
                           "text-[9px] font-bold uppercase tracking-tighter",
-                          `text-${log.icon}-500/80`
+                          `text-${getLevelColor(log.level)}-500/80`
                         )}
                       >
                         {log.level}
@@ -200,7 +176,7 @@ export default function SystemLogsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-[10px] font-mono text-muted-foreground opacity-60">
-                    #{log.id}
+                    #{log.id.substring(0, 8)}
                   </td>
                   <td className="px-6 py-4">
                     <Badge
@@ -215,11 +191,16 @@ export default function SystemLogsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className="text-[10px] font-bold text-muted-foreground tabular-nums opacity-60 flex items-center justify-end gap-1.5">
-                      <Clock className="w-3 h-3" /> {log.time}
+                      <Clock className="w-3 h-3" /> {formatDistanceToNow(new Date(log.createdAt))} ago
                     </span>
                   </td>
                 </tr>
               ))}
+              {(!data || data.length === 0) && (
+                <tr>
+                   <td colSpan={5} className="py-20 text-center text-muted-foreground italic text-xs uppercase tracking-widest opacity-40">No terminal logs recorded</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

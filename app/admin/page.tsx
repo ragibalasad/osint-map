@@ -8,19 +8,64 @@ import {
   TrendingUp, 
   ShieldAlert,
   Clock,
-  ExternalLink
+  ExternalLink,
+  LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const STATS = [
-  { label: "Total Events", value: "1,284", icon: MapIcon, color: "text-blue-500", trend: "+12%" },
-  { label: "Active Nodes", value: "48", icon: Activity, color: "text-emerald-500", trend: "+3" },
-  { label: "Pending Review", value: "15", icon: ShieldAlert, color: "text-amber-500", trend: "High Priority" },
-  { label: "Verified Users", value: "892", icon: Users, color: "text-purple-500", trend: "+24" },
-];
+import { useMemo } from "react";
+import useSWR from "swr";
+import { formatDistanceToNow } from "date-fns";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+interface AdminStat {
+  label: string;
+  value: string;
+  trend: string;
+  icon: LucideIcon;
+  color?: string;
+}
+
+interface AdminActivity {
+  type: string;
+  label: string;
+  time: string | Date;
+  status: string;
+}
+
+interface AdminStatsResponse {
+  stats: AdminStat[];
+  activity: AdminActivity[];
+  chartData: number[];
+}
 
 export default function AdminOverview() {
+  const { data, isLoading } = useSWR<AdminStatsResponse>("/api/admin/stats", fetcher);
+
+  const stats = useMemo(() => {
+    if (!data) return [];
+    return data.stats.map((s: AdminStat) => ({
+      ...s,
+      icon: (s.label === "Total Events" ? MapIcon :
+            s.label === "Active Nodes" ? Activity :
+            s.label === "Pending Review" ? ShieldAlert : Users) as LucideIcon,
+      color: s.label === "Total Events" ? "text-blue-500" :
+             s.label === "Active Nodes" ? "text-emerald-500" :
+             s.label === "Pending Review" ? "text-amber-500" : "text-purple-500"
+    }));
+  }, [data]);
+
+  if (isLoading) {
+    return (
+      <div className="p-8 space-y-8 flex flex-col items-center justify-center min-h-[60vh] opacity-50">
+        <Activity className="w-10 h-10 animate-pulse text-primary" />
+        <p className="text-xs font-bold uppercase tracking-widest">Establishing Secure Uplink...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       <div>
@@ -29,7 +74,7 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {STATS.map((stat) => (
+        {stats.map((stat: AdminStat) => (
           <Card key={stat.label} className="p-6 bg-card/40 backdrop-blur-xl border-border/40 hover:bg-card/60 transition-all cursor-default">
             <div className="flex items-center justify-between mb-4">
               <div className={cn("p-2 rounded-lg bg-background/50 border border-border/40", stat.color)}>
@@ -61,7 +106,7 @@ export default function AdminOverview() {
           </div>
           
           <div className="h-[250px] flex items-end gap-2 px-2">
-             {[40, 65, 45, 90, 85, 60, 75, 50, 40, 80, 95, 70].map((h, i) => (
+             {(data?.chartData || [40, 65, 45, 90, 85, 60, 75, 50, 40, 80, 95, 70]).map((h: number, i: number) => (
                <div key={i} className="flex-1 space-y-2 group cursor-pointer">
                   <div className="relative h-full flex items-end">
                     <div 
@@ -84,28 +129,21 @@ export default function AdminOverview() {
         </Card>
 
         <Card className="p-6 bg-card/40 backdrop-blur-xl border-border/40">
-           <h3 className="text-lg font-bold font-display uppercase tracking-tight mb-6">Recent Activity</h3>
            <div className="space-y-6">
-              {[
-                { type: "INGEST", label: "Telegram Message Scraped", time: "2m ago", status: "emerald" },
-                { type: "AI", label: "Coordinates Extracted", time: "5m ago", status: "blue" },
-                { type: "AUTH", label: "New Admin Role Request", time: "12m ago", status: "amber" },
-                { type: "EVENT", label: "Kharkiv Strike Published", time: "45m ago", status: "emerald" },
-                { type: "AI", label: "Gemini Quota Warning", time: "1h ago", status: "red" },
-              ].map((act, i) => (
+              {(data?.activity || []).map((act: AdminActivity, i: number) => (
                 <div key={i} className="flex gap-4 group">
                   <div className="relative flex flex-col items-center">
                     <div className={cn("w-2.5 h-2.5 rounded-full z-10", `bg-${act.status}-500 shadow-[0_0_8px_rgba(var(--${act.status}-500),0.5)]`)} />
-                    {i !== 4 && <div className="absolute top-2.5 w-[1px] h-full bg-border/20" />}
+                    {data?.activity && i !== (data.activity.length - 1) && <div className="absolute top-2.5 w-[1px] h-full bg-border/20" />}
                   </div>
                   <div className="flex-1 pb-4">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{act.type}</span>
                       <span className="text-[9px] font-bold text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" /> {act.time}
+                        <Clock className="w-2.5 h-2.5" /> {formatDistanceToNow(new Date(act.time))} ago
                       </span>
                     </div>
-                    <p className="text-xs font-medium group-hover:text-primary transition-colors cursor-default">{act.label}</p>
+                    <p className="text-xs font-medium group-hover:text-primary transition-colors cursor-default line-clamp-2">{act.label}</p>
                   </div>
                 </div>
               ))}

@@ -66,18 +66,20 @@ async function startTelegramIngestor() {
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   for (const channelName of TARGET_CHANNELS) {
+    console.log(`🔍 Checking channel: @${channelName}`);
     try {
       const msgs = await client.getMessages(channelName, { limit: 2 });
-      console.log(`📥 Priming ${msgs.length} messages from ${channelName}`);
+      console.log(`📥 Priming ${msgs.length} messages from @${channelName}`);
       for (const msg of msgs) {
         if (msg.text) {
+          console.log(`📄 Processing message text: "${msg.text.substring(0, 30)}..."`);
           await processIngestion(msg.text);
           // Small delay to avoid hitting Gemini free tier RPM
           await sleep(2000);
         }
       }
     } catch (err) {
-      console.warn(`⚠️ Could not prime channel ${channelName}:`, (err as Error).message);
+      console.warn(`⚠️ Could not prime channel @${channelName}:`, err);
     }
   }
 

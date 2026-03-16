@@ -3,12 +3,15 @@ import { pendingEvents, publishedEvents } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { pointSql } from "@/lib/map-logic";
-import { isAdmin } from "@/lib/admin-check";
+import { getServerSession } from "@/lib/admin-check";
 
 export async function POST(req: Request) {
-  if (!(await isAdmin())) {
+  const session = await getServerSession();
+  if (session?.user?.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
+
+  const userId = session.user.id;
   try {
     const { id, title, description, lng, lat, severity } = await req.json();
 
@@ -24,6 +27,7 @@ export async function POST(req: Request) {
       description: description || pending.suggestedDescription || "",
       severity: severity || "medium",
       coordinates: pointSql(lng, lat),
+      userId,
     });
 
     // 3. Delete from pending_events (or mark as published)

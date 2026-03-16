@@ -1,10 +1,17 @@
 import "dotenv/config";
 import { db } from "./lib/db";
 import { publishedEvents } from "./lib/schema";
+import { user } from "./lib/auth-schema";
 import { pointSql } from "./lib/map-logic";
 
 async function seed() {
   console.log("🌱 Seeding OSINT events...");
+
+  const [firstUser] = await db.select().from(user).limit(1);
+  if (!firstUser) {
+    console.warn("⚠️ No users found in database. Skipping seed because publishedEvents depends on user_id.");
+    process.exit(0);
+  }
 
   const mockEvents = [
     {
@@ -43,6 +50,7 @@ async function seed() {
       description: event.description,
       severity: event.severity,
       coordinates: pointSql(event.lng, event.lat),
+      userId: firstUser.id,
     });
   }
 

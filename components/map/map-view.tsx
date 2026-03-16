@@ -52,6 +52,8 @@ export function MapView({ isAdmin }: MapViewProps) {
   const [bbox, setBbox] = React.useState<number[] | null>(null);
   const [selectedEvent, setSelectedEvent] = React.useState<MapEvent | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [tempPos, setTempPos] = React.useState<{ lng: number, lat: number } | null>(null);
 
   const hours = searchParams.get("hours");
   const region = searchParams.get("region");
@@ -232,32 +234,47 @@ export function MapView({ isAdmin }: MapViewProps) {
           <GeolocateControl position="top-right" />
           <ScaleControl position="bottom-left" />
 
-          {events?.map((event: MapEvent) => (
-            <Marker
-              key={event.id}
-              longitude={event.lng}
-              latitude={event.lat}
-              anchor="bottom"
-              onClick={e => {
-                e.originalEvent.stopPropagation();
-                setSelectedEvent(event);
-              }}
-            >
-              <div className="cursor-pointer group">
-                <div className={cn(
-                  "relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-background shadow-lg transition-transform hover:scale-125",
-                  event.severity === "critical" ? "bg-red-600 shadow-xl shadow-red-600/20" :
-                  event.severity === "high" ? "bg-orange-500" :
-                  event.severity === "medium" ? "bg-yellow-500" : "bg-blue-500"
-                )}>
-                  {event.severity === "critical" && (
-                    <span className="absolute inset-0 animate-ping rounded-full bg-red-600 opacity-75"></span>
+          {events?.map((event: MapEvent) => {
+            const isSelected = selectedEvent?.id === event.id;
+            const isBeingEdited = isSelected && isEditing;
+            
+            return (
+              <Marker
+                key={event.id}
+                longitude={isBeingEdited && tempPos ? tempPos.lng : event.lng}
+                latitude={isBeingEdited && tempPos ? tempPos.lat : event.lat}
+                anchor="bottom"
+                draggable={isBeingEdited}
+                onDragEnd={(e) => {
+                  setTempPos({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+                }}
+                onClick={e => {
+                  e.originalEvent.stopPropagation();
+                  setSelectedEvent(event);
+                }}
+              >
+                <div className={cn("cursor-pointer group relative", isBeingEdited && "cursor-move")}>
+                  {isBeingEdited && (
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-primary text-primary-foreground text-[8px] font-bold px-2 py-1 rounded shadow-xl animate-bounce">
+                      DRAG TO RE-POSITION
+                    </div>
                   )}
-                  <div className="h-2 w-2 rounded-full bg-white shadow-sm" />
+                  <div className={cn(
+                    "relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-background shadow-lg transition-transform hover:scale-125",
+                    isBeingEdited ? "ring-4 ring-primary/40 scale-110" : "",
+                    event.severity === "critical" ? "bg-red-600 shadow-xl shadow-red-600/20" :
+                    event.severity === "high" ? "bg-orange-500" :
+                    event.severity === "medium" ? "bg-yellow-500" : "bg-blue-500"
+                  )}>
+                    {(event.severity === "critical" && !isBeingEdited) && (
+                      <span className="absolute inset-0 animate-ping rounded-full bg-red-600 opacity-75"></span>
+                    )}
+                    <div className="h-2 w-2 rounded-full bg-white shadow-sm" />
+                  </div>
                 </div>
-              </div>
-            </Marker>
-          ))}
+              </Marker>
+            );
+          })}
 
           {selectedEvent && (
             <Popup
@@ -274,19 +291,28 @@ export function MapView({ isAdmin }: MapViewProps) {
               <PopupContent 
                 event={selectedEvent} 
                 isAdmin={isAdmin} 
+                isEditing={isEditing}
+                onToggleEdit={(val) => {
+                  setIsEditing(val);
+                  setTempPos(null);
+                }}
                 onDelete={async (id: string) => {
                   await fetch(`/api/admin/events/${id}`, { method: "DELETE" });
                   mutate();
                   setSelectedEvent(null);
+                  setIsEditing(false);
                 }}
                 onUpdate={async (id: string, data: Partial<MapEvent>) => {
+                  const finalData = tempPos ? { ...data, lng: tempPos.lng, lat: tempPos.lat } : data;
                   await fetch(`/api/admin/events/${id}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(finalData),
                   });
                   mutate();
-                  if (selectedEvent) setSelectedEvent({ ...selectedEvent, ...data } as MapEvent);
+                  setIsEditing(false);
+                  setTempPos(null);
+                  if (selectedEvent) setSelectedEvent({ ...selectedEvent, ...data, ...(tempPos || {}) } as MapEvent);
                 }}
               />
             </Popup>
@@ -300,15 +326,18 @@ export function MapView({ isAdmin }: MapViewProps) {
 function PopupContent({ 
   event, 
   isAdmin, 
+  isEditing,
+  onToggleEdit,
   onDelete, 
   onUpdate 
 }: { 
   event: MapEvent; 
   isAdmin: boolean; 
+  isEditing: boolean;
+  onToggleEdit: (val: boolean) => void;
   onDelete: (id: string) => Promise<void>;
   onUpdate: (id: string, data: Partial<MapEvent>) => Promise<void>;
 }) {
-  const [isEditing, setIsEditing] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
@@ -362,8 +391,8 @@ function PopupContent({
            <Button 
             variant="outline" 
             size="sm" 
-            className="h-9 rounded-lg gap-2 text-[10px] font-bold uppercase"
-            onClick={() => setIsEditing(false)}
+            className="h-9 rounded-lg gap-2 text-[10px] font-bold uppercase transition-all hover:bg-secondary"
+            onClick={() => onToggleEdit(false)}
             disabled={isSaving}
            >
              <X className="w-3 h-3" /> Cancel
@@ -371,13 +400,12 @@ function PopupContent({
            <Button 
             variant="default" 
             size="sm" 
-            className="h-9 rounded-lg gap-2 text-[10px] font-bold uppercase shadow-lg shadow-primary/10"
+            className="h-9 rounded-lg gap-2 text-[10px] font-bold uppercase shadow-lg shadow-primary/10 transition-all hover:scale-[1.02]"
             disabled={isSaving}
             onClick={async () => {
               setIsSaving(true);
               try {
                 await onUpdate(event.id, { title, description: desc, severity });
-                setIsEditing(false);
               } finally {
                 setIsSaving(false);
               }
@@ -460,12 +488,12 @@ function PopupContent({
                 </Button>
                 <Button 
                   variant="outline" 
-                  size="sm" 
-                  className="flex-1 h-8 rounded-lg gap-2 text-[9px] font-bold uppercase hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all font-display"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Edit3 className="w-3 h-3" /> Edit
-                </Button>
+              size="sm" 
+              className="flex-1 h-8 rounded-lg gap-2 text-[9px] font-bold uppercase hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all font-display"
+              onClick={() => onToggleEdit(true)}
+            >
+              <Edit3 className="w-3 h-3" /> Edit
+            </Button>
               </div>
             )}
           </div>

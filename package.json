@@ -13,7 +13,8 @@
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
     "db:pull": "drizzle-kit pull",
-    "db:setup": "pnpm db:postgis && pnpm db:push && pnpm db:seed"
+    "db:setup": "pnpm db:postgis && pnpm db:push && pnpm db:seed",
+    "ingest:telegram": "tsx ingest/telegram-ingestor.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.5.5",
@@ -30,6 +31,7 @@
     "maplibre-gl": "^5.20.1",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
+    "openai": "^6.32.0",
     "p-retry": "^7.1.1",
     "pg": "^8.20.0",
     "radix-ui": "^1.4.3",

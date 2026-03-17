@@ -42,6 +42,17 @@ const SCROLLBAR_STYLES = `
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.3);
   }
+  .maplibregl-popup-content {
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .maplibregl-popup-tip {
+    border-bottom-color: transparent !important;
+    border-top-color: transparent !important;
+    display: none !important;
+  }
 `;
 
 const MAP_STYLE_LIGHT = "https://tiles.openfreemap.org/styles/bright";

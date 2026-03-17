@@ -17,6 +17,7 @@ export const publishedEvents = pgTable("published_events", {
   imageUrl: text("image_url"),
   coordinates: geometry("coordinates").notNull(),
   userId: text("user_id").references(() => user.id),
+  sourceCreatedAt: timestamp("source_created_at"), // Original Telegram/RSS time
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -26,12 +27,21 @@ export const publishedEvents = pgTable("published_events", {
 
 export const pendingEvents = pgTable("pending_events", {
   id: uuid("id").primaryKey().defaultRandom(),
+  externalId: text("external_id").unique(), // tg_channel_msgid
+  source: text("source"), // e.g. "liveuamap"
   rawSource: text("raw_source").notNull(), // Original scrape content (Telegram/RSS/Social)
   suggestedTitle: text("suggested_title"),
   suggestedDescription: text("suggested_description"),
   suggestedCoordinates: geometry("suggested_coordinates"),
-  status: text("status").$type<"pending" | "processed" | "rejected">().default("pending"),
+  status: text("status").$type<"pending" | "processing" | "processed" | "rejected" | "failed">().default("pending"),
+  sourceCreatedAt: timestamp("source_created_at"), // Original Telegram/RSS time
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const systemSettings = pgTable("system_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const systemLogs = pgTable("system_logs", {

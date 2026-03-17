@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { pendingEvents } from "@/lib/schema";
-import { desc, sql } from "drizzle-orm";
+import { desc, sql, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-check";
 
@@ -15,12 +15,15 @@ export async function GET() {
       suggestedTitle: pendingEvents.suggestedTitle,
       suggestedDescription: pendingEvents.suggestedDescription,
       status: pendingEvents.status,
+      source: pendingEvents.source,
+      sourceCreatedAt: pendingEvents.sourceCreatedAt,
       createdAt: pendingEvents.createdAt,
+      externalId: pendingEvents.externalId,
       lng: sql<number | null>`ST_X(${pendingEvents.suggestedCoordinates})`,
       lat: sql<number | null>`ST_Y(${pendingEvents.suggestedCoordinates})`,
     })
     .from(pendingEvents)
-    .orderBy(desc(pendingEvents.createdAt));
+    .orderBy(desc(sql`COALESCE(${pendingEvents.sourceCreatedAt}, ${pendingEvents.createdAt})`));
 
     return NextResponse.json(queue);
   } catch (error) {
@@ -42,7 +45,12 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await db.delete(pendingEvents).where(sql`${pendingEvents.id} = ${id}`);
+    if (id === "all") {
+      await db.delete(pendingEvents);
+      return NextResponse.json({ success: true, message: "Queue cleared" });
+    }
+    
+    await db.delete(pendingEvents).where(eq(pendingEvents.id, id));
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete event:", error);

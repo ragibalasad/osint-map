@@ -5,6 +5,40 @@ import { NewMessage } from "telegram/events";
 import { NewMessageEvent } from "telegram/events/NewMessage";
 import { processIngestion } from "../lib/ingest-pipeline";
 import input from "input";
+import fs from "fs";
+import path from "path";
+
+const LOCK_FILE = path.join(process.cwd(), ".ingestor.lock");
+
+function checkLock() {
+  if (fs.existsSync(LOCK_FILE)) {
+    const pid = fs.readFileSync(LOCK_FILE, "utf-8");
+    console.error(`\n❌ ERROR: Another ingestor is already running (PID: ${pid})`);
+    console.error(`If you are sure it stopped, delete the file: ${LOCK_FILE}\n`);
+    process.exit(1);
+  }
+  fs.writeFileSync(LOCK_FILE, process.pid.toString());
+}
+
+function releaseLock() {
+  if (fs.existsSync(LOCK_FILE)) {
+    try {
+      fs.unlinkSync(LOCK_FILE);
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+}
+
+// Cleanup lock on exit
+process.on("exit", releaseLock);
+process.on("SIGINT", () => { releaseLock(); process.exit(); });
+process.on("SIGTERM", () => { releaseLock(); process.exit(); });
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  releaseLock();
+  process.exit(1);
+});
 
 const apiId = parseInt(process.env.TELEGRAM_API_ID || "0");
 const apiHash = process.env.TELEGRAM_API_HASH || "";
@@ -21,6 +55,7 @@ const TARGET_CHANNELS = [
 ];
 
 async function startTelegramIngestor() {
+  checkLock();
   if (!apiId || !apiHash) {
     console.error("❌ Error: TELEGRAM_API_ID and TELEGRAM_API_HASH must be set in .env");
     process.exit(1);
@@ -36,7 +71,7 @@ async function startTelegramIngestor() {
     phoneNumber: async () => await input.text("Please enter your phone number: "),
     password: async () => await input.text("Please enter your password: "),
     phoneCode: async () => await input.text("Please enter the code you received: "),
-    onError: (err) => console.log(err),
+    onError: (err: unknown) => console.log(err),
   });
 
   console.log("✅ Successfully connected to Telegram!");
@@ -56,26 +91,30 @@ async function startTelegramIngestor() {
     
     // Check if it's from our target list
     if (username && TARGET_CHANNELS.includes(username?.toString())) {
-      await processIngestion(message.text);
+      await processIngestion(message.text, {
+        externalId: `tg_${username}_${message.id}`,
+        source: username.toString(),
+        sourceCreatedAt: new Date(message.date * 1000),
+      });
     }
   }, new NewMessage({}));
 
   console.log(`\n🛰️ Monitoring channels: ${TARGET_CHANNELS.join(", ")}`);
   console.log("Fetching recent history to prime the queue...");
 
-  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
   for (const channelName of TARGET_CHANNELS) {
     console.log(`🔍 Checking channel: @${channelName}`);
     try {
-      const msgs = await client.getMessages(channelName, { limit: 2 });
+      const msgs = await client.getMessages(channelName, { limit: 5 });
       console.log(`📥 Priming ${msgs.length} messages from @${channelName}`);
       for (const msg of msgs) {
         if (msg.text) {
           console.log(`📄 Processing message text: "${msg.text.substring(0, 30)}..."`);
-          await processIngestion(msg.text);
-          // Small delay to avoid hitting Gemini free tier RPM
-          await sleep(2000);
+          await processIngestion(msg.text, {
+            externalId: `tg_${channelName}_${msg.id}`,
+            source: channelName,
+            sourceCreatedAt: new Date(msg.date * 1000),
+          });
         }
       }
     } catch (err) {

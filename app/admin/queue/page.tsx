@@ -732,12 +732,12 @@ export default function ModerationQueue() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="h-11 w-11 rounded-xl text-muted-foreground hover:bg-destructive hover:text-destructive-foreground border-border/40 hover:border-destructive transition-all p-0"
+                      className="h-11 px-6 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-border/40 transition-all"
                       onClick={handleDelete}
                       title="Permanently Delete Event"
                       disabled={isPublishing || isReprocessing}
                     >
-                      <X className="w-5 h-5 mx-auto" />
+                      <X className="w-4 h-4" />
                       Delete
                     </Button>
                     <Button
@@ -818,7 +818,7 @@ export default function ModerationQueue() {
                           }
                         }
                       }}
-                      className="w-full bg-secondary/20 border border-border/30 rounded-xl pl-10 pr-4 h-11 text-xs font-black uppercase tracking-tight focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all placeholder:text-muted-foreground/30"
+                      className="w-full bg-background/60 border border-border/40 rounded-xl pl-10 pr-4 h-11 text-xs font-black uppercase tracking-tight focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all placeholder:text-muted-foreground/50 text-foreground shadow-inner"
                     />
                   </div>
                   <div className="flex items-center justify-between">

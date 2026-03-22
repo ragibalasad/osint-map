@@ -11,7 +11,7 @@ export async function getServerSession() {
 
 export async function isAdmin() {
   const session = await getServerSession();
-  return session?.user?.role === "admin";
+  return session?.user?.role === "admin" || session?.user?.role === "owner";
 }
 
 export async function protectAdmin() {
@@ -21,7 +21,7 @@ export async function protectAdmin() {
     redirect("/auth/sign-in");
   }
 
-  if (session.user.role !== "admin") {
+  if (session.user.role === "user") {
     redirect("/");
   }
 

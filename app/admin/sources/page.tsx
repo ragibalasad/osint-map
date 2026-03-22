@@ -4,8 +4,8 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Database, Plus, Trash2, Power, Globe, Loader2, Signal } from "lucide-react";
+import { Database, Plus, Trash2, Power, Globe, Loader2, Signal, Radio, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Source {
   id: string;
@@ -53,100 +53,135 @@ export default function SourcesPage() {
   };
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500 font-sans">
+    <div className="p-8 space-y-8 animate-in fade-in duration-500 font-sans max-w-7xl mx-auto">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight font-display mb-1 uppercase flex items-center gap-3">
-            <Database className="w-8 h-8 text-primary" />
-            Signal Sources
+            <Radio className="w-8 h-8 text-primary shadow-[0_0_24px_rgba(var(--primary),0.5)] bg-primary/20 p-1.5 rounded-lg border border-primary/30" />
+            Active Signal Relays
           </h1>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Manage MTProto extraction nodes</p>
+          <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Manage MTProto extraction nodes & OSINT pipelines</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
         <div className="lg:col-span-2 space-y-4">
-           {isLoading && (
-             <div className="flex flex-col items-center justify-center p-20 opacity-50 gap-4">
-                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                 <span className="text-xs uppercase tracking-widest font-bold">Syncing Database...</span>
+           {isLoading ? (
+             <div className="flex flex-col items-center justify-center p-32 opacity-50 gap-6">
+                 <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                 <span className="text-xs uppercase tracking-[0.3em] font-black text-primary animate-pulse">Synchronizing Topology...</span>
+             </div>
+           ) : !sources?.length ? (
+             <Card className="p-20 text-center bg-card/20 backdrop-blur-xl border-dashed border-2 border-border/40 rounded-3xl">
+                <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-6">
+                   <Database className="w-8 h-8 text-muted-foreground/30" />
+                </div>
+                <h3 className="text-xl font-bold font-display uppercase tracking-tight mb-2">No Comm Relays Online</h3>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">Deploy a new extraction node to begin collecting signals.</p>
+              </Card>
+           ) : (
+             <div className="grid gap-4">
+                {sources.map(source => (
+                  <Card key={source.id} className={cn("p-6 flex items-center justify-between bg-card/30 backdrop-blur-xl border-border/40 hover:bg-card/50 transition-all group overflow-hidden relative", source.isActive ? "border-primary/20 shadow-lg shadow-primary/5" : "")}>
+                    {source.isActive && (
+                       <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+                    )}
+                    <div className="flex items-center gap-6 relative z-10">
+                      <div className="relative">
+                        <div className={cn("p-4 rounded-2xl flex items-center justify-center border shadow-xl relative z-10 backdrop-blur-3xl", source.type === 'telegram' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500 shadow-blue-500/20' : 'bg-orange-500/10 border-orange-500/20 text-orange-500 shadow-orange-500/20')}>
+                          {source.type === 'telegram' ? <Signal className="w-6 h-6" /> : <Globe className="w-6 h-6" />}
+                        </div>
+                        {source.isActive && (
+                           <div className={cn("absolute inset-0 blur-xl animate-pulse -z-10", source.type === "telegram" ? "bg-blue-500/30" : "bg-orange-500/30")} />
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <span className="font-black text-xl font-display uppercase tracking-tighter shadow-sm">{source.value}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold font-mono">
+                            TRGT_NODE_TYPE: <span className={cn(source.type === "telegram" ? "text-blue-400" : "text-orange-400")}>{source.type}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-8 relative z-10">
+                      <div className="flex items-center gap-2">
+                        {source.isActive ? (
+                          <>
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mt-0.5">Live</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">Dormant</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(source.id)}
+                        disabled={deletingId === source.id}
+                        className="h-10 w-10 p-0 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 rounded-xl hover:border hover:border-destructive/20 transition-all border border-transparent"
+                      >
+                        {deletingId === source.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
              </div>
            )}
-
-           {!isLoading && sources?.map(source => (
-              <Card key={source.id} className="p-5 flex items-center justify-between bg-card/40 backdrop-blur-xl border-border/40 hover:bg-card/60 transition-all">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl border flex items-center justify-center ${source.type === 'telegram' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' : 'bg-orange-500/10 border-orange-500/20 text-orange-500'}`}>
-                    {source.type === 'telegram' ? <Signal className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-lg font-display uppercase tracking-tight">{source.value}</span>
-                    <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">{source.type}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                  {source.isActive ? (
-                    <Badge variant="outline" className="text-xs uppercase font-bold tracking-widest text-emerald-500 bg-emerald-500/10 border-emerald-500/20 px-3">
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
-                      Offline
-                    </Badge>
-                  )}
-                  
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleDelete(source.id)}
-                    disabled={deletingId === source.id}
-                    className="h-10 w-10 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 rounded-xl"
-                  >
-                    {deletingId === source.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </Card>
-           ))}
         </div>
 
         <div>
-          <Card className="p-6 bg-card/40 backdrop-blur-xl border-border/40 sticky top-8">
-            <h3 className="font-bold font-display uppercase tracking-widest mb-4 flex items-center gap-2 text-sm">
-              <Power className="w-4 h-4 text-primary" /> Deploy New Node
-            </h3>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="space-y-2">
-                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Platform</label>
-                 <select 
-                   value={newType} 
-                   onChange={(e) => setNewType(e.target.value)}
-                   className="w-full bg-secondary/30 border border-border/40 p-3 rounded-xl text-sm font-bold placeholder:text-muted-foreground/50 uppercase outline-none focus:ring-2 focus:ring-primary/50 transition-all font-display"
-                 >
-                   <option value="telegram">Telegram Channel</option>
-                   <option value="rss" disabled>RSS Feed (Soon)</option>
-                 </select>
-              </div>
-              <div className="space-y-2">
-                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Target ID (Username)</label>
-                 <input 
-                   type="text"
-                   value={newValue}
-                   onChange={e => setNewValue(e.target.value)}
-                   placeholder="e.g. liveuamap"
-                   required
-                   className="w-full bg-secondary/30 border border-border/40 p-3 rounded-xl text-sm font-bold placeholder:text-muted-foreground/50 uppercase outline-none focus:ring-2 focus:ring-primary/50 transition-all font-display"
-                 />
-              </div>
-              <Button 
-                type="submit" 
-                disabled={isAdding || !newValue} 
-                className="w-full h-12 uppercase tracking-widest font-bold text-xs gap-2 mt-4 shadow-lg shadow-primary/20"
-              >
-                {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                Initialize Target
-              </Button>
-            </form>
+          <Card className="bg-card/40 backdrop-blur-xl border-border/40 sticky top-8 overflow-hidden rounded-[2rem] shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+            <div className="p-8 relative">
+              <h3 className="font-bold font-display uppercase tracking-[0.2em] mb-6 flex items-center gap-3 text-sm text-primary">
+                <Power className="w-5 h-5 bg-primary/20 p-1 rounded border border-primary/30 shadow-[0_0_12px_rgba(var(--primary),0.4)]" /> 
+                Deploy Extraction Node
+              </h3>
+              <form onSubmit={handleAdd} className="space-y-6">
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-muted-foreground/80 uppercase tracking-widest flex items-center gap-2">
+                     <ArrowRight className="w-3 h-3 text-primary/60" /> Operation Protocol
+                   </label>
+                   <select 
+                     value={newType} 
+                     onChange={(e) => setNewType(e.target.value)}
+                     className="w-full bg-background/60 border border-border/40 shadow-inner p-4 rounded-xl text-xs font-black placeholder:text-muted-foreground/50 uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/50 transition-all font-sans text-foreground"
+                   >
+                     <option value="telegram" className="bg-background text-foreground uppercase tracking-widest font-black text-xs">MTProto Network (Telegram View)</option>
+                     <option value="rss" disabled className="bg-background text-foreground uppercase tracking-widest font-black text-xs opacity-50">RSS Syndication (Dormant)</option>
+                   </select>
+                </div>
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-muted-foreground/80 uppercase tracking-widest flex items-center gap-2">
+                     <ArrowRight className="w-3 h-3 text-primary/60" /> Target Identifier
+                   </label>
+                   <input 
+                     type="text"
+                     value={newValue}
+                     onChange={e => setNewValue(e.target.value)}
+                     placeholder="E.G. LIVEUAMAP"
+                     required
+                     className="w-full bg-background/60 border border-border/40 shadow-inner p-4 rounded-xl text-xs font-black placeholder:text-muted-foreground/40 uppercase tracking-wide outline-none focus:ring-1 focus:ring-primary/50 transition-all font-mono text-foreground"
+                   />
+                </div>
+                <Button 
+                  type="submit" 
+                  disabled={isAdding || !newValue} 
+                  className="w-full h-14 uppercase tracking-widest font-black text-xs gap-3 mt-4 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl border border-primary/20"
+                >
+                  {isAdding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5 stroke-[3]" />}
+                  Initialize Pipeline
+                </Button>
+              </form>
+            </div>
           </Card>
         </div>
       </div>

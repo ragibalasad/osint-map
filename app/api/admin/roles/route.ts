@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { user } from "@/lib/auth-schema";
-import { eq, isNotNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-check";
 
@@ -10,13 +10,10 @@ export async function GET() {
   }
 
   try {
-    const requests = await db.select()
-      .from(user)
-      .where(isNotNull(user.roleRequest));
-
-    return NextResponse.json(requests);
+    const allUsers = await db.select().from(user);
+    return NextResponse.json(allUsers);
   } catch (error) {
-    console.error("Failed to fetch role requests:", error);
+    console.error("Failed to fetch users:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -27,15 +24,20 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const { userId, action } = await req.json(); // action: "approve" or "reject"
+    const { userId, action } = await req.json();
 
-    if (action === "approve") {
+    if (action.startsWith("approve_")) {
+      const targetRole = action.split("approve_")[1] as "admin" | "moderator" | "analyst";
       await db.update(user)
-        .set({ role: "admin", roleRequest: null })
+        .set({ role: targetRole, roleRequest: null })
         .where(eq(user.id, userId));
-    } else {
+    } else if (action === "reject") {
       await db.update(user)
         .set({ roleRequest: "rejected" })
+        .where(eq(user.id, userId));
+    } else if (action === "demote") {
+      await db.update(user)
+        .set({ role: "user", roleRequest: null })
         .where(eq(user.id, userId));
     }
 

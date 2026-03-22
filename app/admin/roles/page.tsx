@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, User as UserIcon, X, Check, Loader2, Users } from "lucide-react";
 import Image from "next/image";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface RoleUser {
   id: string;
@@ -16,24 +18,9 @@ interface RoleUser {
 }
 
 export default function RoleRequestsPage() {
-  const [requests, setRequests] = useState<RoleUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  const fetchRequests = async () => {
-    try {
-      const res = await fetch("/api/admin/roles");
-      const data = await res.json();
-      setRequests(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: requests, mutate, isLoading } = useSWR<RoleUser[]>("/api/admin/roles", fetcher, {
+    refreshInterval: 10000
+  });
 
   const handleAction = async (userId: string, action: "approve" | "reject") => {
     try {
@@ -41,7 +28,7 @@ export default function RoleRequestsPage() {
         method: "PATCH",
         body: JSON.stringify({ userId, action }),
       });
-      fetchRequests();
+      mutate();
     } catch (err) {
       console.error(err);
     }
@@ -64,7 +51,7 @@ export default function RoleRequestsPage() {
       </div>
 
       <div className="grid gap-4 max-w-4xl">
-        {requests.length === 0 ? (
+        {!requests || requests.length === 0 ? (
           <Card className="p-20 text-center bg-card/20 backdrop-blur-xl border-dashed border-2 border-border/40 rounded-3xl">
             <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-6">
                <Users className="w-8 h-8 text-muted-foreground/30" />

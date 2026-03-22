@@ -8,31 +8,29 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
 export interface ParsedIntel {
   title: string;
   description: string;
-  latitude: number | null;
-  longitude: number | null;
+  locationName: string | null; // Changed: Extract name, not coords
   severity: "low" | "medium" | "high" | "critical";
 }
 
 const SYSTEM_PROMPT = `
-You are an expert OSINT (Open Source Intelligence) analyzer. 
+You are an expert OSINT analyzer. 
 Analyze the following raw report and return a tactical SITREP JSON object.
 
 ### EXTRACTION RULES:
-1. **GEOLOCATION (CRITICAL)**: 
-   - Identify the exact city, village, landmark, or tactical front mentioned.
-   - Return THE MOST ACCURATE possible WGS84 decimal coordinates for that location using your internal spatial data.
-   - If no specific location is found, return null for both latitude and longitude.
-2. **TITLE**: Tactical and brief (max 8 words). e.g., "Missile Strike: Tel Aviv Port".
-3. **DESCRIPTION**: 1-2 sentence tactical summary. Focus on "What" and "Where".
+1. **LOCATION (CRITICAL)**: 
+   - Identify the specific place name, city, landmark, or building mentioned.
+   - Return only the most specific name found (e.g. "Okhmatdyt Hospital" or "Kyiv city center").
+   - If no specific location is found, return null.
+2. **TITLE**: Tactical and brief (max 8 words).
+3. **DESCRIPTION**: 1-2 sentence tactical summary.
 4. **SEVERITY**: low | medium | high | critical.
 
 ### JSON TEMPLATE:
 {
   "title": "...",
   "description": "...",
-  "latitude": number | null,
-  "longitude": number | null,
-  "severity": "low" | "medium" | "high" | "critical"
+  "locationName": "string | null",
+  "severity": "..."
 }
 `;
 

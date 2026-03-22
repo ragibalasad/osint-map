@@ -4,6 +4,7 @@ import { parseRawIntel } from "./ai-parser";
 import { pointSql } from "./map-logic";
 import { eq } from "drizzle-orm";
 import { logSystem } from "./logging";
+import { geocodeLocation } from "./geocoder";
 
 /**
  * Common ingestion pipeline that takes raw text, 
@@ -93,20 +94,34 @@ export async function reprocessEvent(id: string, rawText: string) {
 
   try {
     if (parsed) {
-      console.log(`📍 AI Suggested Location: ${parsed.latitude}, ${parsed.longitude}`);
+      // Stage 2: Specialized Geocoding
+      let lat: number | null = null;
+      let lng: number | null = null;
       
+      if (parsed.locationName) {
+        console.log(`🔎 Geocoding extracted location: "${parsed.locationName}"`);
+        const coords = await geocodeLocation(parsed.locationName);
+        if (coords) {
+          lat = coords.lat;
+          lng = coords.lng;
+          console.log(`🎯 Surgical coordinates: ${lat}, ${lng}`);
+        } else {
+          console.warn(`⚠️ No surgical coordinates found for: ${parsed.locationName}`);
+        }
+      }
+
       await db.update(pendingEvents)
         .set({
           suggestedTitle: parsed.title,
           suggestedDescription: parsed.description,
-          suggestedCoordinates: (parsed.longitude !== null && parsed.latitude !== null) 
-            ? pointSql(parsed.longitude!, parsed.latitude!) 
+          suggestedCoordinates: (lat !== null && lng !== null) 
+            ? pointSql(lng, lat) 
             : null,
           status: "processed",
         })
         .where(eq(pendingEvents.id, id));
         
-      await logSystem("info", "AI", `Parsed location for intel ${id}: ${parsed.latitude}, ${parsed.longitude}`);
+      await logSystem("info", "AI", `Parsed content for intel ${id}. Location: ${parsed.locationName || "None"}. Coords: ${lat}, ${lng}`);
       console.log("✅ AI metadata attached.");
       return true;
     } else {

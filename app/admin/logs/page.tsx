@@ -28,10 +28,24 @@ interface SystemLog {
   createdAt: string;
 }
 
+interface Telemetry {
+  cpuLoad: string;
+  memUsage: string;
+  activeNodes: string;
+}
+
+interface LogsResponse {
+  logs: SystemLog[];
+  telemetry: Telemetry;
+}
+
 export default function SystemLogsPage() {
-  const { data, isLoading } = useSWR<SystemLog[]>("/api/admin/logs", fetcher, {
+  const { data: response, mutate, isLoading } = useSWR<LogsResponse>("/api/admin/logs", fetcher, {
     refreshInterval: 5000
   });
+
+  const data = response?.logs || [];
+  const telemetry = response?.telemetry;
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -63,9 +77,10 @@ export default function SystemLogsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
+           <Button
             variant="outline"
             size="sm"
+            onClick={() => window.open("/api/admin/logs?mode=export", "_blank")}
             className="h-10 rounded-xl gap-2 text-xs font-bold uppercase tracking-widest bg-card/20 border-border/40"
           >
             <Download className="w-3.5 h-3.5" /> Export
@@ -73,6 +88,7 @@ export default function SystemLogsPage() {
           <Button
             variant="default"
             size="sm"
+            onClick={() => mutate()}
             className="h-10 rounded-xl gap-2 text-xs font-bold uppercase tracking-widest shadow-xl shadow-primary/20"
           >
             <RefreshCcw className="w-3.5 h-3.5" /> Refresh
@@ -82,16 +98,16 @@ export default function SystemLogsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: "CPU Load", value: "24%", icon: Cpu, color: "emerald" },
+          { label: "CPU Load", value: telemetry?.cpuLoad || "..." , icon: Cpu, color: "emerald" },
           {
-            label: "DB Uptime",
-            value: "99.98%",
+            label: "Server Memory",
+            value: telemetry?.memUsage || "...",
             icon: Database,
             color: "blue",
           },
           {
             label: "Active Nodes",
-            value: "6/6",
+            value: telemetry?.activeNodes || "...",
             icon: Network,
             color: "purple",
           },

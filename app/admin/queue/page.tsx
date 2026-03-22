@@ -529,8 +529,37 @@ export default function ModerationQueue() {
               </div>
 
               <div className="w-[450px] h-full flex flex-col bg-card/5">
-                <div className="p-8 border-b border-border/20 bg-background/30 backdrop-blur-md">
+                <div className="p-8 border-b border-border/20 bg-background/30 backdrop-blur-md space-y-4">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] mb-3 font-display">Spatial Correlator</h3>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40 group-focus-within:text-primary transition-colors">
+                        <MapPin className="w-full h-full" />
+                      </div>
+                      <input 
+                        type="text"
+                        placeholder="SEARCH TARGET (E.G. PENTAGON)..."
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          if (val.length < 3) return;
+                          try {
+                            await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=5`);
+                            // Suggestion dropdown soon
+                          } catch {}
+                        }}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter') {
+                            const val = (e.target as HTMLInputElement).value;
+                            const coords = await (await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=1`)).json();
+                            if (coords.features?.[0]) {
+                              const [lng, lat] = coords.features[0].geometry.coordinates;
+                              setEditPos({ lng, lat });
+                              mapRef.current?.flyTo({ center: [lng, lat], zoom: 15 });
+                            }
+                          }
+                        }}
+                        className="w-full bg-secondary/20 border border-border/30 rounded-xl pl-10 pr-4 h-11 text-[10px] font-black uppercase tracking-tight focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all placeholder:text-muted-foreground/30"
+                      />
+                    </div>
                     <div className="flex items-center justify-between">
                        {editPos ? (
                          <span className="text-[10px] font-mono text-emerald-500 font-black tracking-tight flex items-center gap-2 italic">

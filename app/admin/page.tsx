@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
-import { useMemo } from "react";
 import useSWR from "swr";
 import { formatDistanceToNow } from "date-fns";
 
@@ -42,20 +42,19 @@ interface AdminStatsResponse {
 }
 
 export default function AdminOverview() {
-  const { data, isLoading } = useSWR<AdminStatsResponse>("/api/admin/stats", fetcher);
+  const { data, isLoading } = useSWR<AdminStatsResponse>("/api/admin/stats", fetcher, {
+    refreshInterval: 10000 // Refresh every 10s
+  });
 
-  const stats = useMemo(() => {
-    if (!data) return [];
-    return data.stats.map((s: AdminStat) => ({
+  const stats = data ? data.stats.map((s: AdminStat) => ({
       ...s,
       icon: (s.label === "Total Events" ? MapIcon :
             s.label === "Active Nodes" ? Activity :
             s.label === "Pending Review" ? ShieldAlert : Users) as LucideIcon,
-      color: s.label === "Total Events" ? "text-blue-500" :
+             color: s.label === "Total Events" ? "text-blue-500" :
              s.label === "Active Nodes" ? "text-emerald-500" :
              s.label === "Pending Review" ? "text-amber-500" : "text-purple-500"
-    }));
-  }, [data]);
+    })) : [];
 
   if (isLoading) {
     return (
@@ -100,8 +99,10 @@ export default function AdminOverview() {
               <h3 className="text-lg font-bold font-display uppercase tracking-tight">Intelligence Ingestion</h3>
               <p className="text-xs text-muted-foreground">Messages processed per hour across all channels.</p>
             </div>
-            <Button variant="outline" size="sm" className="h-8 text-[11px] font-bold uppercase tracking-wider gap-2">
-               Full Report <ExternalLink className="w-3 h-3" />
+            <Button asChild variant="outline" size="sm" className="h-8 text-[11px] font-bold uppercase tracking-wider gap-2">
+               <Link href="/admin/logs">
+                Full Report <ExternalLink className="w-3 h-3" />
+               </Link>
             </Button>
           </div>
           
@@ -148,8 +149,10 @@ export default function AdminOverview() {
                 </div>
               ))}
            </div>
-           <Button variant="ghost" className="w-full mt-4 text-[11px] font-bold uppercase tracking-widest h-10 hover:bg-secondary">
-             View Audit Log
+           <Button asChild variant="ghost" className="w-full mt-4 text-[11px] font-bold uppercase tracking-widest h-10 hover:bg-secondary">
+             <Link href="/admin/logs">
+                View Audit Log
+             </Link>
            </Button>
         </Card>
       </div>

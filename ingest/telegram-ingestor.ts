@@ -7,6 +7,9 @@ import { NewMessage } from "telegram/events";
 import { NewMessageEvent } from "telegram/events/NewMessage";
 import { StringSession } from "telegram/sessions";
 import { processIngestion } from "../lib/ingest-pipeline";
+import { db } from "../lib/db";
+import { ingestSources } from "../lib/schema";
+import { eq } from "drizzle-orm";
 
 const LOCK_FILE = path.join(process.cwd(), ".ingestor.lock");
 
@@ -72,16 +75,32 @@ const apiHash = process.env.TELEGRAM_API_HASH || "";
 const stringSession = new StringSession(process.env.TELEGRAM_SESSION || "");
 
 // List of target OSINT channels (usernames)
-const TARGET_CHANNELS = [
-  "liveuamap",
-  "DeepStateUA",
-  "clashreport",
-  "osintdefender",
-  "auroraintel",
-  "bnonews",
-];
+let TARGET_CHANNELS: string[] = [];
+
+async function refreshSources() {
+  try {
+    const sources = await db.query.ingestSources.findMany({
+      where: eq(ingestSources.isActive, true),
+    });
+    // Assuming type 'telegram' and value holds the username
+    const newChannels = sources.filter(s => s.type === "telegram").map(s => s.value);
+    // If DB is empty, fallback or just use empty list
+    TARGET_CHANNELS = newChannels.length > 0 ? newChannels : [
+      "liveuamap",
+      "DeepStateUA",
+      "clashreport",
+      "osintdefender",
+      "auroraintel",
+      "bnonews",
+    ];
+    console.log(`\n🛰️ Updated monitoring channels: ${TARGET_CHANNELS.join(", ")}`);
+  } catch (err) {
+    console.error("Failed to refresh sources from DB:", err);
+  }
+}
 
 async function startTelegramIngestor() {
+  await refreshSources();
   checkLock();
   if (!apiId || !apiHash) {
     if (!apiId) console.error("❌ Missing: TELEGRAM_API_ID");
@@ -129,15 +148,28 @@ async function startTelegramIngestor() {
 
     // Check if it's from our target list
     if (username && TARGET_CHANNELS.includes(username?.toString())) {
+      let imageUrl: string | undefined;
+
+      // Extremely basic media extraction for web previews
+      if (message.media && 'webpage' in message.media) {
+        const webpage = message.media.webpage;
+        if (webpage && 'photo' in webpage) {
+            // We can't trivially convert MTProto Photo to URL without downloading, 
+            // but if there's an external url sometimes in webpage, we could try.
+            // For now, let's leave imageUrl undefined unless it's a direct url.
+        }
+      }
+
       await processIngestion(message.text, {
         externalId: `tg_${username}_${message.id}`,
         source: username.toString(),
         sourceCreatedAt: new Date(message.date * 1000),
+        imageUrl
       });
     }
   }, new NewMessage({}));
 
-  console.log(`\n🛰️ Monitoring channels: ${TARGET_CHANNELS.join(", ")}`);
+  console.log(`\n🛰️ Monitoring channels initialized.`);
   console.log("Fetching recent history to prime the queue...");
 
   for (const channelName of TARGET_CHANNELS) {
@@ -170,6 +202,7 @@ async function startTelegramIngestor() {
 
   // Keep alive heartbeat every 15 minutes
   setInterval(async () => {
+    await refreshSources();
     const isConnected = client.connected;
     console.log(
       `💓 [${new Date().toISOString()}] Ingestor Heartbeat: Still monitoring ${
@@ -187,7 +220,7 @@ async function startTelegramIngestor() {
         process.exit(1);
       }
     }
-  }, 15 * 60 * 1000);
+  }, 5 * 60 * 1000); // Check every 5 mins instead of 15
 }
 
 startTelegramIngestor().catch(console.error);

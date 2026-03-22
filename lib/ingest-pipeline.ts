@@ -11,7 +11,7 @@ import { logSystem } from "./logging";
  */
 export async function processIngestion(
   rawText: string, 
-  metadata?: { externalId?: string; source?: string; sourceCreatedAt?: Date }
+  metadata?: { externalId?: string; source?: string; sourceCreatedAt?: Date; imageUrl?: string; sourceMetadata?: Record<string, unknown> }
 ) {
   if (!rawText || rawText.length < 10) return null;
 
@@ -39,6 +39,8 @@ export async function processIngestion(
       externalId: metadata?.externalId,
       source: metadata?.source,
       sourceCreatedAt: metadata?.sourceCreatedAt,
+      imageUrl: metadata?.imageUrl,
+      sourceMetadata: metadata?.sourceMetadata,
       status: "pending",
     }).returning();
     pending = results[0];

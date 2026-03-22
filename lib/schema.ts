@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, customType, boolean, jsonb } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 
 // Custom type for PostGIS geometry supporting WGS84 (SRID 4326)
@@ -15,6 +15,7 @@ export const publishedEvents = pgTable("published_events", {
   sourceUrl: text("source_url"),
   severity: text("severity").$type<"low" | "medium" | "high" | "critical">().default("low").notNull(),
   imageUrl: text("image_url"),
+  sourceMetadata: jsonb("source_metadata"),
   coordinates: geometry("coordinates").notNull(),
   userId: text("user_id").references(() => user.id),
   sourceCreatedAt: timestamp("source_created_at"), // Original Telegram/RSS time
@@ -33,6 +34,8 @@ export const pendingEvents = pgTable("pending_events", {
   suggestedTitle: text("suggested_title"),
   suggestedDescription: text("suggested_description"),
   suggestedCoordinates: geometry("suggested_coordinates"),
+  imageUrl: text("image_url"),
+  sourceMetadata: jsonb("source_metadata"),
   status: text("status").$type<"pending" | "processing" | "processed" | "rejected" | "failed">().default("pending"),
   sourceCreatedAt: timestamp("source_created_at"), // Original Telegram/RSS time
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -49,5 +52,15 @@ export const systemLogs = pgTable("system_logs", {
   level: text("level").$type<"info" | "warn" | "error">().default("info").notNull(),
   module: text("module").notNull(), // e.g. "INGEST", "AI", "AUTH"
   message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const ingestSources = pgTable("ingest_sources", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: text("type").$type<"telegram" | "rss" | "custom">().notNull(),
+  value: text("value").notNull(), // username or URL
+  name: text("name"), // display name
+  isActive: boolean("is_active").default(true).notNull(),
+  lastFetchedAt: timestamp("last_fetched_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

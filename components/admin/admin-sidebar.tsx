@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   LayoutDashboard,
   LogOut,
+  Database,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,11 @@ const MENU_ITEMS = [
     title: "User Roles",
     href: "/admin/roles",
     icon: Users,
+  },
+  {
+    title: "Signal Sources",
+    href: "/admin/sources",
+    icon: Database,
   },
   {
     title: "System Logs",

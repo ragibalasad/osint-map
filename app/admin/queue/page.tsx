@@ -35,6 +35,7 @@ interface PendingEvent {
   lng: number | null;
   lat: number | null;
   externalId: string | null;
+  imageUrl: string | null;
 }
 
 export default function ModerationQueue() {
@@ -93,6 +94,21 @@ export default function ModerationQueue() {
       setEditPos(null);
     }
   }, [selected, editTitle, editDesc, editPos]);
+
+  React.useEffect(() => {
+    const eventSource = new EventSource('/api/admin/stream');
+    eventSource.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        if (payload.type === "new_event") {
+          mutate();
+        }
+      } catch {
+        // ignore errors
+      }
+    };
+    return () => eventSource.close();
+  }, [mutate]);
 
   const handlePublish = async () => {
     if (!selected || !editPos) return;
@@ -467,6 +483,12 @@ export default function ModerationQueue() {
                         </div>
                       </div>
                       <p className="text-xs leading-relaxed text-muted-foreground font-medium italic relative z-10">&ldquo;{selected.rawSource}&rdquo;</p>
+                      {selected.imageUrl && (
+                        <div className="mt-4 relative z-10 rounded-xl overflow-hidden border border-border/20">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={selected.imageUrl} alt="Signal Image" className="w-full max-h-64 object-cover hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

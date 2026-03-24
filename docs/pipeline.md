@@ -68,3 +68,13 @@ The `ingest/telegram-ingestor.ts` is designed for **24/7 Production Stability**:
 - **Auto-Reconnect**: Automatically detects silent connection drops and attempts to reconnect without crashing.
 - **Rate Limit Throttling**: Includes a built-in 5-second delay between AI parsing tasks to respect Gemini API Free Tier quotas.
 - **Stale Lock Cleanup**: Automatically clears its own PID lock file in cloud environments (Railway/Vercel) to ensure smooth restarts after a crash.
+
+## 🖼️ 5. Media & Source Tracking
+Every ingested signal includes automated source traceability:
+- **Telegram Permalinks**: Each report persists a direct `t.me` link back to the original message.
+- **Visual Intelligence**: The ingestor automatically extracts native photos and video thumbnails (for `Api.MessageMediaDocument`), uploads them to **Vercel Blob Storage**, and attaches the URL to the report.
+
+## ⏳ 6. Historical Backfilling
+The `telegram-ingestor.ts` includes logic to crawl backwards in time when a new channel is added. 
+- It scans the last **100 messages** of any new source to ensure the map isn't empty on day one.
+- Historical messages follow the same AI enrichment and moderation pipeline as live signals.

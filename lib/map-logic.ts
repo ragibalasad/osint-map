@@ -14,7 +14,9 @@ export async function getEventsInViewport(
   minLat: number,
   maxLng: number,
   maxLat: number,
-  hours?: number
+  hours?: number,
+  from?: Date,
+  to?: Date
 ) {
   const whereClause = [
     sql`ST_Within(
@@ -23,7 +25,11 @@ export async function getEventsInViewport(
     )`
   ];
 
-  if (hours) {
+  if (from && to) {
+    // Custom date range takes priority over hours preset
+    whereClause.push(sql`${publishedEvents.createdAt} >= ${from.toISOString()}`);
+    whereClause.push(sql`${publishedEvents.createdAt} <= ${to.toISOString()}`);
+  } else if (hours) {
     whereClause.push(sql`${publishedEvents.createdAt} >= NOW() - INTERVAL '${sql.raw(hours.toString())} hours'`);
   }
 
@@ -33,7 +39,7 @@ export async function getEventsInViewport(
     description: publishedEvents.description,
     severity: publishedEvents.severity,
     imageUrl: publishedEvents.imageUrl,
-    sourceUrl: publishedEvents.sourceUrl, // Added this
+    sourceUrl: publishedEvents.sourceUrl,
     createdAt: publishedEvents.createdAt,
     lng: sql<number>`ST_X(${publishedEvents.coordinates})`,
     lat: sql<number>`ST_Y(${publishedEvents.coordinates})`,

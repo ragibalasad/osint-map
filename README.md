@@ -41,10 +41,11 @@ For production, ensure these are set:
 ## 🛡️ Operational Features
 
 - **📍 Precision Mapping**: High-speed geospatial visualization via MapLibre GL.
-- **🤖 AI Extraction**: Automated situational reports and geolocation using Gemini 2.0 Flash.
-- **📡 Reliable Ingest**: Heartbeat-monitored Telegram scraper with auto-reconnection.
-- **👮 Moderation Queue**: Full-cycle verification from raw intel to published events.
-- **🔐 Secure Uplink**: Hardened role-based access control via Better-Auth.
+- **🤖 AI Extraction**: Automated situational reports and geolocation using Gemini 2.0 Flash or GPT-4o.
+- **📡 Reliable Ingest**: Heartbeat-monitored Telegram scraper with automated **media extraction** (images/video thumbnails).
+- **⏳ Historical Search**: Custom date range filtering for exploring past conflict cycles or specific operations.
+- **🕵️ Advanced Response Hub**: Full CRUD lifecycle for intelligence verification, coordination, and publication.
+- **🔐 Secure Uplink**: Hardened role-based access control (RBAC) via Better-Auth.
 
 ---
 

@@ -35,6 +35,7 @@ export const pendingEvents = pgTable("pending_events", {
   suggestedDescription: text("suggested_description"),
   suggestedCoordinates: geometry("suggested_coordinates"),
   imageUrl: text("image_url"),
+  sourceUrl: text("source_url"), // Direct link back to the original post
   sourceMetadata: jsonb("source_metadata"),
   status: text("status").$type<"pending" | "processing" | "processed" | "rejected" | "failed">().default("pending"),
   sourceCreatedAt: timestamp("source_created_at"), // Original Telegram/RSS time

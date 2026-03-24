@@ -245,6 +245,7 @@ async function startTelegramIngestor() {
       await processIngestion(message.text, {
         externalId: `tg_${username}_${message.id}`,
         source: username.toString(),
+        sourceUrl: `https://t.me/${username}/${message.id}`,
         sourceCreatedAt: new Date(message.date * 1000),
         imageUrl,
       });
@@ -318,6 +319,7 @@ async function startTelegramIngestor() {
           await processIngestion(msg.text, {
             externalId: `tg_${channelName}_${msg.id}`,
             source: channelName,
+            sourceUrl: `https://t.me/${channelName}/${msg.id}`,
             sourceCreatedAt: new Date(msg.date * 1000),
             imageUrl,
           });

@@ -99,6 +99,8 @@ export function MapView({ role }: MapViewProps) {
 
   const hours = searchParams.get("hours");
   const region = searchParams.get("region");
+  const dateFrom = searchParams.get("from");
+  const dateTo = searchParams.get("to");
 
   React.useEffect(() => {
     if (region && region !== "global" && mapRef.current) {
@@ -119,13 +121,17 @@ export function MapView({ role }: MapViewProps) {
     bbox
       ? `/api/events?minLng=${bbox[0]}&minLat=${bbox[1]}&maxLng=${
           bbox[2]
-        }&maxLat=${bbox[3]}&hours=${hours || "24"}${
+        }&maxLat=${bbox[3]}${
+          dateFrom && dateTo
+            ? `&from=${dateFrom}&to=${dateTo}`
+            : `&hours=${hours || "24"}`
+        }${
           region ? `&region=${region}` : ""
         }`
       : null,
     fetcher,
     {
-      refreshInterval: 10000,
+      refreshInterval: dateFrom && dateTo ? 0 : 10000, // Don't poll for historical ranges
       keepPreviousData: true,
     }
   );
@@ -479,6 +485,7 @@ function PopupContent({
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
   const [title, setTitle] = React.useState(event.title);
   const [desc, setDesc] = React.useState(event.description);
   const [severity, setSeverity] = React.useState(event.severity);
@@ -578,7 +585,7 @@ function PopupContent({
     <div className="w-[300px] bg-card/95 backdrop-blur-2xl text-card-foreground shadow-[0_24px_64px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden font-sans border border-white/5 animate-in fade-in zoom-in-95 duration-200">
       
       {/* Image Hero - click to expand */}
-      {event.imageUrl && (
+      {event.imageUrl && !imageError && (
         <div
           className="relative cursor-zoom-in group overflow-hidden"
           onClick={() => onLightbox(event.imageUrl!)}
@@ -587,6 +594,7 @@ function PopupContent({
           <img
             src={event.imageUrl}
             alt={event.title}
+            onError={() => setImageError(true)}
             className="w-full h-36 object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -645,8 +653,8 @@ function PopupContent({
           {event.description}
         </p>
 
-        {/* Source Button (when no image to reduce redundancy) */}
-        {event.sourceUrl && !event.imageUrl && (
+        {/* Source Link - always visible when available */}
+        {event.sourceUrl && (
           <Button
             asChild
             size="sm"

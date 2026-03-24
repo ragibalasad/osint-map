@@ -12,7 +12,7 @@ import { geocodeLocation } from "./geocoder";
  */
 export async function processIngestion(
   rawText: string, 
-  metadata?: { externalId?: string; source?: string; sourceCreatedAt?: Date; imageUrl?: string; sourceMetadata?: Record<string, unknown> }
+  metadata?: { externalId?: string; source?: string; sourceUrl?: string; sourceCreatedAt?: Date; imageUrl?: string; sourceMetadata?: Record<string, unknown> }
 ) {
   if (!rawText || rawText.length < 10) return null;
 
@@ -39,6 +39,7 @@ export async function processIngestion(
       rawSource: rawText,
       externalId: metadata?.externalId,
       source: metadata?.source,
+      sourceUrl: metadata?.sourceUrl,
       sourceCreatedAt: metadata?.sourceCreatedAt,
       imageUrl: metadata?.imageUrl,
       sourceMetadata: metadata?.sourceMetadata,

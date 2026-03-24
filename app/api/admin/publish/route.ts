@@ -26,6 +26,10 @@ export async function POST(req: Request) {
       title: title || pending.suggestedTitle || "Untitled Event",
       description: description || pending.suggestedDescription || "",
       severity: severity || "medium",
+      imageUrl: pending.imageUrl,
+      sourceUrl: pending.sourceUrl,
+      sourceMetadata: pending.sourceMetadata,
+      sourceCreatedAt: pending.sourceCreatedAt,
       coordinates: pointSql(lng, lat),
       userId,
     });

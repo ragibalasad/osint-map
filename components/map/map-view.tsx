@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Activity,
+  Camera,
   Check,
   ChevronRight,
   Edit3,
   ExternalLink,
   Globe,
   Loader2,
+  Maximize2,
   Trash2,
   X,
   Zap,
@@ -89,6 +91,7 @@ export function MapView({ role }: MapViewProps) {
   );
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [isEditing, setIsEditing] = React.useState(false);
+  const [lightboxUrl, setLightboxUrl] = React.useState<string | null>(null);
   const [tempPos, setTempPos] = React.useState<{
     lng: number;
     lat: number;
@@ -261,16 +264,16 @@ export function MapView({ role }: MapViewProps) {
                             className="text-[9px] font-bold text-primary/70 flex items-center gap-1 hover:text-primary transition-colors hover:underline underline-offset-2"
                           >
                             <Globe className="w-2.5 h-2.5" />
-                            INTEL SOURCE
+                            {e.sourceUrl.includes("t.me") ? "TELEGRAM" : "INTEL SOURCE"}
                             <ExternalLink className="w-2 h-2" />
                           </a>
                         ) : (
                           <span />
                         )}
-                        <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-bold text-muted-foreground/40 group-hover:text-primary/60 transition-colors uppercase tracking-widest opacity-0 group-hover:opacity-100">
-                            Locate
-                          </span>
+                        <div className="flex items-center gap-1.5">
+                          {e.imageUrl && (
+                            <Camera className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+                          )}
                           <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                         </div>
                       </div>
@@ -393,6 +396,7 @@ export function MapView({ role }: MapViewProps) {
                 canEdit={canEdit}
                 canDelete={canDelete}
                 isEditing={isEditing}
+                onLightbox={setLightboxUrl}
                 onToggleEdit={(val) => {
                   setIsEditing(val);
                   setTempPos(null);
@@ -426,6 +430,28 @@ export function MapView({ role }: MapViewProps) {
             </Popup>
           )}
         </Map>
+
+        {/* Lightbox Overlay */}
+        {lightboxUrl && (
+          <div
+            className="absolute inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-200"
+            onClick={() => setLightboxUrl(null)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxUrl}
+              alt="Intel Visual"
+              className="max-w-[90%] max-h-[90%] object-contain rounded-2xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
+              onClick={() => setLightboxUrl(null)}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -439,6 +465,7 @@ function PopupContent({
   onToggleEdit,
   onDelete,
   onUpdate,
+  onLightbox,
 }: {
   event: MapEvent;
   canEdit: boolean;
@@ -447,6 +474,7 @@ function PopupContent({
   onToggleEdit: (val: boolean) => void;
   onDelete: (id: string) => Promise<void>;
   onUpdate: (id: string, data: Partial<MapEvent>) => Promise<void>;
+  onLightbox: (url: string) => void;
 }) {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -547,58 +575,94 @@ function PopupContent({
   }
 
   return (
-    <div className="p-4 max-w-[240px] bg-card/90 backdrop-blur-xl text-card-foreground border-none shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-2xl overflow-hidden font-sans">
-      <div className="flex items-center justify-between mb-3 border-b border-border/30 pb-2">
+    <div className="w-[300px] bg-card/95 backdrop-blur-2xl text-card-foreground shadow-[0_24px_64px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden font-sans border border-white/5 animate-in fade-in zoom-in-95 duration-200">
+      
+      {/* Image Hero - click to expand */}
+      {event.imageUrl && (
         <div
-          className={cn(
-            "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider font-display",
-            event.severity === "critical"
-              ? "bg-red-500/10 text-red-500 border border-red-500/20"
-              : event.severity === "high"
-              ? "bg-orange-500/10 text-orange-500 border border-orange-500/20"
-              : "bg-secondary text-secondary-foreground"
-          )}
+          className="relative cursor-zoom-in group overflow-hidden"
+          onClick={() => onLightbox(event.imageUrl!)}
         >
-          {event.severity}
-        </div>
-        <span className="text-[9px] font-bold text-muted-foreground tabular-nums opacity-60">
-          {formatTime(event.createdAt)}
-        </span>
-      </div>
-      <h4 className="font-bold text-sm mb-2 leading-tight tracking-tight font-display">
-        {event.title}
-      </h4>
-      <p className="text-[11px] text-muted-foreground/90 line-clamp-4 mb-4 leading-relaxed">
-        {event.description}
-      </p>
-      <div className="space-y-4">
-        {event.imageUrl && (
-          <div className="rounded-xl overflow-hidden border border-border/30 shadow-lg shadow-black/20">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={event.imageUrl} 
-              alt={event.title} 
-              className="w-full h-32 object-cover hover:scale-110 transition-transform duration-500" 
-            />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="w-full h-36 object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            <Maximize2 className="w-3 h-3" />
           </div>
-        )}
+        </div>
+      )}
 
-        {event.sourceUrl && (
+      <div className="p-4 space-y-3">
+        {/* Header: severity + time + source */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className={cn(
+                "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider font-display flex-shrink-0",
+                event.severity === "critical"
+                  ? "bg-red-500/15 text-red-500 border border-red-500/20"
+                  : event.severity === "high"
+                  ? "bg-orange-500/15 text-orange-500 border border-orange-500/20"
+                  : event.severity === "medium"
+                  ? "bg-yellow-500/15 text-yellow-500 border border-yellow-500/20"
+                  : "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+              )}
+            >
+              {event.severity}
+            </div>
+            {event.sourceUrl && (
+              <a
+                href={event.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[9px] font-bold text-muted-foreground/60 hover:text-primary flex items-center gap-1 truncate transition-colors"
+              >
+                {event.sourceUrl.includes("t.me") ? (
+                  <><Globe className="w-2.5 h-2.5 flex-shrink-0" /> TG<ExternalLink className="w-2 h-2 flex-shrink-0" /></>
+                ) : (
+                  <><Globe className="w-2.5 h-2.5 flex-shrink-0" /> SOURCE<ExternalLink className="w-2 h-2 flex-shrink-0" /></>
+                )}
+              </a>
+            )}
+          </div>
+          <span className="text-[9px] font-bold text-muted-foreground/50 tabular-nums flex-shrink-0">
+            {formatTime(event.createdAt)}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h4 className="font-bold text-sm leading-snug tracking-tight font-display">
+          {event.title}
+        </h4>
+
+        {/* Description */}
+        <p className="text-[11px] text-muted-foreground/80 line-clamp-3 leading-relaxed">
+          {event.description}
+        </p>
+
+        {/* Source Button (when no image to reduce redundancy) */}
+        {event.sourceUrl && !event.imageUrl && (
           <Button
             asChild
             size="sm"
-            variant="default"
-            className="w-full h-9 text-[11px] font-bold gap-2 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-display"
+            variant="outline"
+            className="w-full h-8 text-[10px] font-bold gap-1.5 border-border/40 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all"
           >
             <a href={event.sourceUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-3.5 h-3.5" />
-              {event.sourceUrl.includes("t.me") ? "OPEN ON TELEGRAM" : "READ INTEL SOURCE"}
+              <ExternalLink className="w-3 h-3" />
+              {event.sourceUrl.includes("t.me") ? "OPEN ON TELEGRAM" : "VIEW INTEL SOURCE"}
             </a>
           </Button>
         )}
 
+        {/* Admin Actions */}
         {canEdit && (
-          <div className="pt-2 mt-2 border-t border-border/30">
+          <div className="pt-2 border-t border-border/20">
             {showDeleteConfirm && canDelete ? (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                 <p className="text-[10px] font-bold text-destructive uppercase text-center tracking-widest">
@@ -617,7 +681,7 @@ function PopupContent({
                   <Button
                     variant="destructive"
                     size="sm"
-                    className="flex-1 h-8 rounded-lg text-[9px] font-bold uppercase shadow-lg shadow-destructive/20"
+                    className="flex-1 h-8 rounded-lg text-[9px] font-bold uppercase"
                     disabled={isDeleting}
                     onClick={async () => {
                       setIsDeleting(true);
@@ -625,11 +689,7 @@ function PopupContent({
                       setIsDeleting(false);
                     }}
                   >
-                    {isDeleting ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3 h-3" />
-                    )}
+                    {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                     Confirm
                   </Button>
                 </div>
@@ -640,7 +700,7 @@ function PopupContent({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 h-8 rounded-lg gap-2 text-[9px] font-bold uppercase hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all font-display"
+                    className="flex-1 h-8 rounded-lg gap-1.5 text-[9px] font-bold uppercase hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <Trash2 className="w-3 h-3" /> Delete
@@ -650,7 +710,7 @@ function PopupContent({
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "h-8 rounded-lg gap-2 text-[9px] font-bold uppercase hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all font-display",
+                    "h-8 rounded-lg gap-1.5 text-[9px] font-bold uppercase hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all",
                     canDelete ? "flex-1" : "w-full"
                   )}
                   onClick={() => onToggleEdit(true)}

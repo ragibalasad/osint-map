@@ -1,5 +1,6 @@
 import { protectAdmin } from "@/lib/admin-check";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminContentShell } from "@/components/admin/admin-content-shell";
 
 export default async function AdminLayout({
   children,
@@ -11,11 +12,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans">
       <AdminSidebar />
-      <main className="flex-1 pl-64 transition-all duration-300">
-        <div className="h-full">
-          {children}
-        </div>
-      </main>
+      <AdminContentShell>{children}</AdminContentShell>
     </div>
   );
 }

@@ -193,67 +193,58 @@ const criticalHeatmapLayer: maplibregl.LayerSpecification = {
 };
 // ─── Event type → emoji icon map ─────────────────────────────────────────────
 const EVENT_TYPE_EMOJI: Record<string, string> = {
-  airstrike: "✈",
+  airstrike: "✈️",
   explosion: "💥",
-  ground_assault: "⚔",
+  artillery: "☄️",
+  missile: "🚀",
+  drone: "🛸",
+  armor: "🛡️",
+  ground_assault: "⚔️",
+  police: "👮",
   naval: "⚓",
+  fire: "🔥",
+  casualties: "🩸",
+  wmd: "☢️",
+  cyber: "💻",
+  infrastructure: "🏗️",
+  disaster: "🌊",
   political: "📢",
-  humanitarian: "+",
-  unknown: "•",
+  protest: "✊",
+  humanitarian: "🏥",
+  unknown: "🔹",
 };
 
 /** Derive event type from title keywords (heuristic until schema has explicit type) */
 function deriveEventType(title: string): string {
   const t = title.toLowerCase();
-  if (
-    t.includes("airstrike") ||
-    t.includes("air strike") ||
-    t.includes("aircraft") ||
-    t.includes("drone") ||
-    t.includes("f-16") ||
-    t.includes("f16")
-  )
-    return "airstrike";
-  if (
-    t.includes("explosion") ||
-    t.includes("blast") ||
-    t.includes("strike") ||
-    t.includes("bombed") ||
-    t.includes("missile")
-  )
-    return "explosion";
-  if (
-    t.includes("naval") ||
-    t.includes("ship") ||
-    t.includes("vessel") ||
-    t.includes("fleet") ||
-    t.includes("submarine")
-  )
-    return "naval";
-  if (
-    t.includes("assault") ||
-    t.includes("infantry") ||
-    t.includes("troops") ||
-    t.includes("ground") ||
-    t.includes("forces")
-  )
-    return "ground_assault";
-  if (
-    t.includes("ceasefire") ||
-    t.includes("diplomat") ||
-    t.includes("sanction") ||
-    t.includes("parliament") ||
-    t.includes("treaty")
-  )
-    return "political";
-  if (
-    t.includes("aid") ||
-    t.includes("civilian") ||
-    t.includes("hospital") ||
-    t.includes("evacuati") ||
-    t.includes("refugee")
-  )
-    return "humanitarian";
+
+  // 1. Most specific high tier first
+  if (t.includes("nuke") || t.includes("nuclear") || t.includes("radioactive") || t.includes("chemical weapon") || t.includes("biohazard")) return "wmd";
+  if (t.includes("tsunami") || t.includes("earthquake") || t.includes("volcano") || t.includes("flood") || t.includes("disaster")) return "disaster";
+  
+  if (t.includes("missile") || t.includes("rocket") || t.includes("sam") || t.includes("air defense") || t.includes("intercepted")) return "missile";
+  if (t.includes("drone") || t.includes("uav") || t.includes("shahed") || t.includes("fpv") || t.includes("quadcopter")) return "drone";
+  if (t.includes("artillery") || t.includes("shelling") || t.includes("mlrs") || t.includes("mortar")) return "artillery";
+  if (t.includes("tank") || t.includes("apc") || t.includes("armored") || t.includes("convoy")) return "armor";
+  if (t.includes("airstrike") || t.includes("air strike") || t.includes("aircraft") || t.includes("jet") || t.includes("f-16") || t.includes("f16") || t.includes("bomber") || t.includes("helicopter")) return "airstrike";
+
+  // 2. Medium specificity
+  if (t.includes("cyber") || t.includes("hacker") || t.includes("jamming") || t.includes("radar") || t.includes("ddos")) return "cyber";
+  if (t.includes("ship") || t.includes("naval") || t.includes("vessel") || t.includes("fleet") || t.includes("submarine") || t.includes("boat")) return "naval";
+  if (t.includes("fire") || t.includes("blaze") || t.includes("firebomb")) return "fire";
+  if (t.includes("dead") || t.includes("killed") || t.includes("casualt") || t.includes("injur") || t.includes("medic")) return "casualties";
+  if (t.includes("infrastructure") || t.includes("bridge") || t.includes("railway") || t.includes("crane") || t.includes("tunnel")) return "infrastructure";
+
+  // 3. General action
+  if (t.includes("police") || t.includes("arrest") || t.includes("patrol") || t.includes("cop")) return "police";
+  if (t.includes("protest") || t.includes("rally") || t.includes("crowd") || t.includes("riot")) return "protest";
+  if (t.includes("assault") || t.includes("infantry") || t.includes("troops") || t.includes("ground") || t.includes("forces") || t.includes("gunfight") || t.includes("clash")) return "ground_assault";
+  if (t.includes("explosion") || t.includes("blast") || t.includes("strike") || t.includes("bombed") || t.includes("detonat")) return "explosion";
+  
+  // 4. Soft topics
+  if (t.includes("ceasefire") || t.includes("diplomat") || t.includes("sanction") || t.includes("parliament") || t.includes("treaty") || t.includes("statement") || t.includes("speech")) return "political";
+  if (t.includes("aid") || t.includes("civilian") || t.includes("hospital") || t.includes("evacuati") || t.includes("refugee") || t.includes("hostage")) return "humanitarian";
+
   return "unknown";
 }
 // ──────────────────────────────────────────────────────────────────────────────

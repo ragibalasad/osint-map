@@ -86,13 +86,25 @@ const SEVERITY_OPTIONS = ["low", "medium", "high", "critical"] as const;
 type Severity = (typeof SEVERITY_OPTIONS)[number];
 
 const EVENT_TYPE_LABELS: Record<string, { emoji: string; label: string }> = {
-  airstrike:      { emoji: "✈", label: "Airstrike" },
-  explosion:      { emoji: "💥", label: "Explosion" },
-  ground_assault: { emoji: "⚔", label: "Ground" },
-  naval:          { emoji: "⚓", label: "Naval" },
-  political:      { emoji: "📢", label: "Political" },
-  humanitarian:   { emoji: "+", label: "Aid" },
-  unknown:        { emoji: "•", label: "Unknown" },
+  airstrike: { emoji: "🎯", label: "Airstrike" },
+  explosion: { emoji: "💥", label: "Explosion" },
+  artillery: { emoji: "☄️", label: "Artillery" },
+  missile: { emoji: "🚀", label: "Missile" },
+  drone: { emoji: "🛰️", label: "Drone" },
+  armor: { emoji: "🚜", label: "Armor" },
+  ground_assault: { emoji: "🔫", label: "Ground" },
+  police: { emoji: "🚨", label: "Police" },
+  naval: { emoji: "⚓", label: "Naval" },
+  fire: { emoji: "🔥", label: "Fire" },
+  casualties: { emoji: "🩸", label: "Casualties" },
+  wmd: { emoji: "☢️", label: "WMD" },
+  cyber: { emoji: "📡", label: "Cyber" },
+  infrastructure: { emoji: "🏭", label: "Infra" },
+  disaster: { emoji: "🌀", label: "Disaster" },
+  political: { emoji: "📢", label: "Political" },
+  protest: { emoji: "✊", label: "Protest" },
+  humanitarian: { emoji: "🏥", label: "Aid" },
+  unknown: { emoji: "💠", label: "Unknown" },
 };
 
 const severityColor = (s: Severity) =>
@@ -383,7 +395,9 @@ export default function ModerationQueue() {
           severity: editSeverity,
           sourceUrl: editSourceUrl,
           eventType: editEventType,
-          sourceCreatedAt: editEventTime ? new Date(editEventTime).toISOString() : undefined,
+          sourceCreatedAt: editEventTime
+            ? new Date(editEventTime).toISOString()
+            : undefined,
         }),
       });
       if (res.ok) {
@@ -467,7 +481,9 @@ export default function ModerationQueue() {
         sourceUrl: pubSourceUrl,
         imageUrl: pubImageUrl,
         eventType: pubEventType,
-        sourceCreatedAt: pubEventTime ? new Date(pubEventTime).toISOString() : undefined,
+        sourceCreatedAt: pubEventTime
+          ? new Date(pubEventTime).toISOString()
+          : undefined,
       };
       if (pubPos) {
         body.lng = pubPos.lng;
@@ -1062,21 +1078,23 @@ export default function ModerationQueue() {
                                   Event Type Icon
                                 </label>
                                 <div className="flex gap-1.5 flex-wrap">
-                                  {Object.entries(EVENT_TYPE_LABELS).map(([type, { emoji, label }]) => (
-                                    <button
-                                      key={type}
-                                      onClick={() => setEditEventType(type)}
-                                      title={label}
-                                      className={cn(
-                                        "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all",
-                                        editEventType === type
-                                          ? "bg-primary/20 border-primary text-primary"
-                                          : "border-border/30 text-muted-foreground hover:border-border/50 hover:text-foreground"
-                                      )}
-                                    >
-                                      <span>{emoji}</span> {label}
-                                    </button>
-                                  ))}
+                                  {Object.entries(EVENT_TYPE_LABELS).map(
+                                    ([type, { emoji, label }]) => (
+                                      <button
+                                        key={type}
+                                        onClick={() => setEditEventType(type)}
+                                        title={label}
+                                        className={cn(
+                                          "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all",
+                                          editEventType === type
+                                            ? "bg-primary/20 border-primary text-primary"
+                                            : "border-border/30 text-muted-foreground hover:border-border/50 hover:text-foreground"
+                                        )}
+                                      >
+                                        <span>{emoji}</span> {label}
+                                      </button>
+                                    )
+                                  )}
                                 </div>
                               </div>
 
@@ -1092,7 +1110,9 @@ export default function ModerationQueue() {
                                   type="datetime-local"
                                   className="w-full bg-secondary/20 border border-border/30 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-foreground [color-scheme:dark]"
                                   value={editEventTime}
-                                  onChange={(e) => setEditEventTime(e.target.value)}
+                                  onChange={(e) =>
+                                    setEditEventTime(e.target.value)
+                                  }
                                 />
                               </div>
 
@@ -1222,21 +1242,23 @@ export default function ModerationQueue() {
                                   Event Type Icon
                                 </label>
                                 <div className="flex gap-1.5 flex-wrap">
-                                  {Object.entries(EVENT_TYPE_LABELS).map(([type, { emoji, label }]) => (
-                                    <button
-                                      key={type}
-                                      onClick={() => setPubEventType(type)}
-                                      title={label}
-                                      className={cn(
-                                        "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all",
-                                        pubEventType === type
-                                          ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
-                                          : "border-border/30 text-muted-foreground hover:border-border/50 hover:text-foreground"
-                                      )}
-                                    >
-                                      <span>{emoji}</span> {label}
-                                    </button>
-                                  ))}
+                                  {Object.entries(EVENT_TYPE_LABELS).map(
+                                    ([type, { emoji, label }]) => (
+                                      <button
+                                        key={type}
+                                        onClick={() => setPubEventType(type)}
+                                        title={label}
+                                        className={cn(
+                                          "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all",
+                                          pubEventType === type
+                                            ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                                            : "border-border/30 text-muted-foreground hover:border-border/50 hover:text-foreground"
+                                        )}
+                                      >
+                                        <span>{emoji}</span> {label}
+                                      </button>
+                                    )
+                                  )}
                                 </div>
                               </div>
 
@@ -1319,7 +1341,9 @@ export default function ModerationQueue() {
                                   type="datetime-local"
                                   className="w-full bg-secondary/20 border border-border/30 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all text-foreground [color-scheme:dark]"
                                   value={pubEventTime}
-                                  onChange={(e) => setPubEventTime(e.target.value)}
+                                  onChange={(e) =>
+                                    setPubEventTime(e.target.value)
+                                  }
                                 />
                               </div>
 
@@ -1525,8 +1549,8 @@ export default function ModerationQueue() {
                                 anchor="bottom"
                               >
                                 <div className="relative">
-                                  <div className="absolute inset-0 scale-[2.5] blur-lg bg-primary/40 rounded-full animate-pulse" />
-                                  <MapPin className="text-primary fill-primary/30 w-9 h-9 -mt-9 stroke-[2.5] drop-shadow-2xl relative z-10" />
+                                  <div className="absolute inset-x-0 bottom-0 translate-y-1/2 scale-[3.5] blur-xl bg-primary/60 rounded-full animate-pulse" />
+                                  <MapPin className="text-primary fill-background w-12 h-12 -mt-12 stroke-[2.5] drop-shadow-[0_0_10px_rgba(var(--primary),0.5)] relative z-10" />
                                 </div>
                               </Marker>
                             )}
@@ -1560,10 +1584,10 @@ export default function ModerationQueue() {
                                       lat: suggLat,
                                     });
                                   }}
-                                  className="bg-primary/10 backdrop-blur-2xl border-primary/40 h-9 text-xs font-black uppercase gap-2 hover:bg-primary/20 text-primary"
+                                  className="bg-background border-green-500/60 h-10 text-xs font-black uppercase gap-2 hover:bg-green-500/10 text-green-500 shadow-[0_0_20px_rgba(0,0,0,0.5)] border-2"
                                 >
-                                  <MapPin className="w-3 h-3" /> Recalibrate to
-                                  Suggestion
+                                  <MapPin className="w-3.5 h-3.5" /> RECALIBRATE
+                                  TO SUGGESTION
                                 </Button>
                               ) : null;
                             })()}
